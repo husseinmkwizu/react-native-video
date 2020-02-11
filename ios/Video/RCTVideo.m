@@ -31,6 +31,7 @@ static int const RCTVideoUnset = -1;
   BOOL _playerBufferEmpty;
   AVPlayerLayer *_playerLayer;
   BOOL _playerLayerObserverSet;
+  BOOL _playerViewControllerObserverSet;
   RCTVideoPlayerViewController *_playerViewController;
   NSURL *_videoURL;
   BOOL _requestingCertificate;
@@ -371,6 +372,7 @@ static int const RCTVideoUnset = -1;
       [self setMaxBitRate:self->_maxBitRate];
       
       [_player pause];
+      [self removePlayerViewControllerObserver];
       [_playerViewController.view removeFromSuperview];
       [_playerViewController removeFromParentViewController];
       _playerViewController = nil;
@@ -1380,6 +1382,7 @@ static int const RCTVideoUnset = -1;
     }
       
     [_playerViewController addObserver:self forKeyPath:readyForDisplayKeyPath options:NSKeyValueObservingOptionNew context:nil];
+    _playerViewControllerObserverSet = YES;
     
     [_playerViewController.contentOverlayView addObserver:self forKeyPath:@"frame" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:NULL];
   }
@@ -1419,6 +1422,7 @@ static int const RCTVideoUnset = -1;
     }
     else
     {
+      [self removePlayerViewControllerObserver];
       [_playerViewController.view removeFromSuperview];
       [_playerViewController removeFromParentViewController];
       _playerViewController = nil;
@@ -1449,8 +1453,17 @@ static int const RCTVideoUnset = -1;
     [_playerLayer removeObserver:self forKeyPath:readyForDisplayKeyPath];
     _playerLayerObserverSet = NO;
   }
+  [self removePlayerViewControllerObserver];
   _playerLayer = nil;
   _player = nil;
+}
+
+- (void)removePlayerViewControllerObserver
+{
+  if (_playerViewControllerObserverSet) {
+      [_playerViewController removeObserver:self forKeyPath:readyForDisplayKeyPath];
+      _playerViewControllerObserverSet = NO;
+    }
 }
 
 #pragma mark - RCTVideoPlayerViewControllerDelegate
@@ -1469,6 +1482,7 @@ static int const RCTVideoUnset = -1;
   {
     _fullscreenPlayerPresented = false;
     _presentingViewController = nil;
+    [self removePlayerViewControllerObserver];
     _playerViewController = nil;
     [self applyModifiers];
     if(self.onVideoFullscreenPlayerDidDismiss) {
@@ -1581,35 +1595,35 @@ static int const RCTVideoUnset = -1;
   _player = nil;
   
   [self removePlayerLayer];
-  
+
   [_playerViewController.contentOverlayView removeObserver:self forKeyPath:@"frame"];
-  [_playerViewController removeObserver:self forKeyPath:readyForDisplayKeyPath];
+  [self removePlayerViewControllerObserver];
   [_playerViewController.view removeFromSuperview];
   [_playerViewController removeFromParentViewController];
   _playerViewController.rctDelegate = nil;
   _playerViewController.player = nil;
   _playerViewController = nil;
-  
+
   [self removePlayerTimeObserver];
   [self removePlayerItemObservers];
-  
+
   _eventDispatcher = nil;
   [[NSNotificationCenter defaultCenter] removeObserver:self];
-  
+
   [super removeFromSuperview];
 }
 
 #pragma mark - Export
 
 - (void)save:(NSDictionary *)options resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject {
-  
+
   AVAsset *asset = _playerItem.asset;
-  
+
   if (asset != nil) {
-    
+
     AVAssetExportSession *exportSession = [AVAssetExportSession
                                            exportSessionWithAsset:asset presetName:AVAssetExportPresetHighestQuality];
-    
+
     if (exportSession != nil) {
       NSString *path = nil;
       NSArray *array = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
