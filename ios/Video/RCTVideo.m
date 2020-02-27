@@ -548,13 +548,13 @@ static int const RCTVideoUnset = -1;
   } else {
     asset = [AVURLAsset URLAssetWithURL:[[NSURL alloc] initFileURLWithPath:[[NSBundle mainBundle] pathForResource:uri ofType:type]] options:nil];
   }
-  // Reset
+  // Reset _loadingRequest
   if (_loadingRequest != nil) {
     [_loadingRequest finishLoading];
   }
   _requestingCertificate = NO;
   _requestingCertificateErrored = NO;
-  /////////
+  // End Reset _loadingRequest
   if (self->_drm != nil) {
     dispatch_queue_t queue = dispatch_queue_create("assetQueue", nil);
     [asset.resourceLoader setDelegate:self queue:queue];
@@ -1786,6 +1786,8 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
                   NSString *spcStr = [[NSString alloc] initWithData:spcData encoding:NSASCIIStringEncoding];
                   self->_requestingCertificate = YES;
                   self.onGetLicense(@{@"spc": spcStr,
+                                      @"contentId": contentId,
+                                      @"spcBase64": [[[NSData alloc] initWithBase64EncodedData:certificateData options:NSDataBase64DecodingIgnoreUnknownCharacters] base64EncodedStringWithOptions:0],
                                       @"target": self.reactTag});
                 } else if(licenseServer != nil) {
                   NSMutableURLRequest *request = [[NSMutableURLRequest alloc] init];

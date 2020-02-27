@@ -30,6 +30,7 @@ public class DataSourceUtil {
 
     private static DataSource.Factory rawDataSourceFactory = null;
     private static DataSource.Factory defaultDataSourceFactory = null;
+    private static HttpDataSource.Factory defaultHttpDataSourceFactory = null;
     private static String userAgent = null;
     private static Cache downloadCache = null;
 
@@ -82,6 +83,17 @@ public class DataSourceUtil {
             return buildDownloadCache(downloadDirectory, databaseProvider);
         }
         return null;
+    }
+
+    public static HttpDataSource.Factory getDefaultHttpDataSourceFactory(ReactContext context, DefaultBandwidthMeter bandwidthMeter, Map<String, String> requestHeaders) {
+        if (defaultHttpDataSourceFactory == null || (requestHeaders != null && !requestHeaders.isEmpty())) {
+            defaultHttpDataSourceFactory = buildHttpDataSourceFactory(context, bandwidthMeter, requestHeaders);
+        }
+        return defaultHttpDataSourceFactory;
+    }
+
+    public static void setDefaultHttpDataSourceFactory(HttpDataSource.Factory factory) {
+        DataSourceUtil.defaultHttpDataSourceFactory = factory;
     }
 
     private static DataSource.Factory buildRawDataSourceFactory(ReactContext context) {
