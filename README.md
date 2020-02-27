@@ -417,16 +417,16 @@ For Android MediaPlayer, you will need to build your own controls or use a packa
 Platforms: Android ExoPlayer, iOS, react-native-dom
 
 #### disableFocus
-
 Determines whether video audio should override background music/audio in Android devices.
 * **false (default)** - Override background audio/music
 * **true** - Let background audio/music from other apps play
 
 Platforms: Android Exoplayer
 
-#### drm
-
+### DRM
 To setup DRM please follow [this guide](./DRM.md)
+
+Platforms: Android Exoplayer, iOS
 
 #### filter
 Add video filter
