@@ -169,7 +169,7 @@ class ReactExoplayerView extends FrameLayout implements
                     if (player != null
                             && player.getPlaybackState() == Player.STATE_READY
                             && player.getPlayWhenReady()
-                            ) {
+                    ) {
                         long pos = player.getCurrentPosition();
                         long bufferedDuration = player.getBufferedPercentage() * player.getDuration() / 100;
                         eventEmitter.progressChanged(pos, bufferedDuration, player.getDuration());
@@ -277,7 +277,7 @@ class ReactExoplayerView extends FrameLayout implements
      * Toggling the visibility of the player control view
      */
     private void togglePlayerControlVisibility() {
-        if(player == null) return;
+        if (player == null) return;
         reLayout(playerControlView);
         if (playerControlView.isVisible()) {
             playerControlView.hide();
@@ -323,7 +323,7 @@ class ReactExoplayerView extends FrameLayout implements
      * Adding Player control to the frame layout
      */
     private void addPlayerControl() {
-        if(player == null) return;
+        if (player == null) return;
         LayoutParams layoutParams = new LayoutParams(
                 LayoutParams.MATCH_PARENT,
                 LayoutParams.MATCH_PARENT);
@@ -337,9 +337,10 @@ class ReactExoplayerView extends FrameLayout implements
 
     /**
      * Update the layout
-     * @param view  view needs to update layout
      *
-     * This is a workaround for the open bug in react-native: https://github.com/facebook/react-native/issues/17968
+     * @param view view needs to update layout
+     *             <p>
+     *             This is a workaround for the open bug in react-native: https://github.com/facebook/react-native/issues/17968
      */
     private void reLayout(View view) {
         if (view == null) return;
@@ -624,7 +625,7 @@ class ReactExoplayerView extends FrameLayout implements
      * Returns a new HttpDataSource factory.
      *
      * @param useBandwidthMeter Whether to set {@link #bandwidthMeter} as a listener to the new
-     *     DataSource factory.
+     *                          DataSource factory.
      * @return A new HttpDataSource factory.
      */
     private HttpDataSource.Factory buildHttpDataSourceFactory(boolean useBandwidthMeter) {
@@ -724,8 +725,13 @@ class ReactExoplayerView extends FrameLayout implements
             Format videoFormat = player.getVideoFormat();
             int width = videoFormat != null ? videoFormat.width : 0;
             int height = videoFormat != null ? videoFormat.height : 0;
+
+
+            // SEE - https://github.com/google/ExoPlayer/issues/2668#issuecomment-296994885
+            boolean streaming = player.isCurrentWindowDynamic() || player.getDuration() == C.TIME_UNSET;
+
             eventEmitter.load(player.getDuration(), player.getCurrentPosition(), width, height,
-                    getAudioTrackInfo(), getTextTrackInfo(), getVideoTrackInfo());
+                    getAudioTrackInfo(), getTextTrackInfo(), getVideoTrackInfo(), streaming);
         }
     }
 
@@ -747,11 +753,12 @@ class ReactExoplayerView extends FrameLayout implements
             audioTrack.putString("type", format.sampleMimeType);
             audioTrack.putString("language", format.language != null ? format.language : "");
             audioTrack.putString("bitrate", format.bitrate == Format.NO_VALUE ? ""
-                                    : String.format(Locale.US, "%.2fMbps", format.bitrate / 1000000f));
+                    : String.format(Locale.US, "%.2fMbps", format.bitrate / 1000000f));
             audioTracks.pushMap(audioTrack);
         }
         return audioTracks;
     }
+
     private WritableArray getVideoTrackInfo() {
         WritableArray videoTracks = Arguments.createArray();
 
@@ -769,7 +776,7 @@ class ReactExoplayerView extends FrameLayout implements
                 Format format = group.getFormat(trackIndex);
                 WritableMap videoTrack = Arguments.createMap();
                 videoTrack.putInt("width", format.width == Format.NO_VALUE ? 0 : format.width);
-                videoTrack.putInt("height",format.height == Format.NO_VALUE ? 0 : format.height);
+                videoTrack.putInt("height", format.height == Format.NO_VALUE ? 0 : format.height);
                 videoTrack.putInt("bitrate", format.bitrate == Format.NO_VALUE ? 0 : format.bitrate);
                 videoTrack.putString("codecs", format.codecs != null ? format.codecs : "");
                 videoTrack.putString("trackId",
@@ -791,13 +798,13 @@ class ReactExoplayerView extends FrameLayout implements
 
         TrackGroupArray groups = info.getTrackGroups(index);
         for (int i = 0; i < groups.length; ++i) {
-             Format format = groups.get(i).getFormat(0);
-             WritableMap textTrack = Arguments.createMap();
-             textTrack.putInt("index", i);
-             textTrack.putString("title", format.id != null ? format.id : "");
-             textTrack.putString("type", format.sampleMimeType);
-             textTrack.putString("language", format.language != null ? format.language : "");
-             textTracks.pushMap(textTrack);
+            Format format = groups.get(i).getFormat(0);
+            WritableMap textTrack = Arguments.createMap();
+            textTrack.putInt("index", i);
+            textTrack.putString("title", format.id != null ? format.id : "");
+            textTrack.putString("type", format.sampleMimeType);
+            textTrack.putString("language", format.language != null ? format.language : "");
+            textTracks.pushMap(textTrack);
         }
         return textTracks;
     }
@@ -887,8 +894,7 @@ class ReactExoplayerView extends FrameLayout implements
                             decoderInitializationException.decoderName);
                 }
             }
-        }
-        else if (e.type == ExoPlaybackException.TYPE_SOURCE) {
+        } else if (e.type == ExoPlaybackException.TYPE_SOURCE) {
             ex = e.getSourceException();
             errorString = getResources().getString(R.string.unrecognized_media_format);
         }
@@ -1021,7 +1027,7 @@ class ReactExoplayerView extends FrameLayout implements
 
         TrackGroupArray groups = info.getTrackGroups(rendererIndex);
         int groupIndex = C.INDEX_UNSET;
-        int[] tracks = {0} ;
+        int[] tracks = {0};
 
         if (TextUtils.isEmpty(type)) {
             type = "default";
@@ -1071,7 +1077,7 @@ class ReactExoplayerView extends FrameLayout implements
         } else if (rendererIndex == C.TRACK_TYPE_TEXT && Util.SDK_INT > 18) { // Text default
             // Use system settings if possible
             CaptioningManager captioningManager
-                    = (CaptioningManager)themedReactContext.getSystemService(Context.CAPTIONING_SERVICE);
+                    = (CaptioningManager) themedReactContext.getSystemService(Context.CAPTIONING_SERVICE);
             if (captioningManager != null && captioningManager.isEnabled()) {
                 groupIndex = getGroupIndexForDefaultLocale(groups);
             }
@@ -1104,7 +1110,7 @@ class ReactExoplayerView extends FrameLayout implements
     }
 
     private int getGroupIndexForDefaultLocale(TrackGroupArray groups) {
-        if (groups.length == 0){
+        if (groups.length == 0) {
             return C.INDEX_UNSET;
         }
 
@@ -1260,11 +1266,11 @@ class ReactExoplayerView extends FrameLayout implements
         this.drmUUID = drmType;
     }
 
-    public void setDrmLicenseUrl(String licenseUrl){
+    public void setDrmLicenseUrl(String licenseUrl) {
         this.drmLicenseUrl = licenseUrl;
     }
 
-    public void setDrmLicenseHeader(String[] header){
+    public void setDrmLicenseHeader(String[] header) {
         this.drmLicenseHeader = header;
     }
 
@@ -1293,7 +1299,7 @@ class ReactExoplayerView extends FrameLayout implements
     /**
      * Handling controls prop
      *
-     * @param controls  Controls prop, if true enable controls, if false disable them
+     * @param controls Controls prop, if true enable controls, if false disable them
      */
     public void setControls(boolean controls) {
         this.controls = controls;

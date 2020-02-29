@@ -1,6 +1,7 @@
 package com.brentvatne.exoplayer;
 
 import androidx.annotation.StringDef;
+
 import android.view.View;
 
 import com.facebook.react.bridge.Arguments;
@@ -103,6 +104,7 @@ class VideoEventEmitter {
     private static final String EVENT_PROP_STEP_FORWARD = "canStepForward";
     private static final String EVENT_PROP_STEP_BACKWARD = "canStepBackward";
 
+    private static final String EVENT_PROP_STREAMING = "streaming";
     private static final String EVENT_PROP_DURATION = "duration";
     private static final String EVENT_PROP_PLAYABLE_DURATION = "playableDuration";
     private static final String EVENT_PROP_SEEKABLE_DURATION = "seekableDuration";
@@ -125,7 +127,7 @@ class VideoEventEmitter {
 
     private static final String EVENT_PROP_TIMED_METADATA = "metadata";
 
-    private static final String EVENT_PROP_BITRATE = "bitrate";   
+    private static final String EVENT_PROP_BITRATE = "bitrate";
 
 
     void setViewId(int viewId) {
@@ -137,8 +139,9 @@ class VideoEventEmitter {
     }
 
     void load(double duration, double currentPosition, int videoWidth, int videoHeight,
-              WritableArray audioTracks, WritableArray textTracks, WritableArray videoTracks) {
+              WritableArray audioTracks, WritableArray textTracks, WritableArray videoTracks, boolean streaming) {
         WritableMap event = Arguments.createMap();
+        event.putBoolean(EVENT_PROP_STREAMING, streaming);
         event.putDouble(EVENT_PROP_DURATION, duration / 1000D);
         event.putDouble(EVENT_PROP_CURRENT_TIME, currentPosition / 1000D);
 
@@ -180,7 +183,7 @@ class VideoEventEmitter {
         WritableMap event = Arguments.createMap();
         event.putDouble(EVENT_PROP_BITRATE, bitRateEstimate);
         receiveEvent(EVENT_BANDWIDTH, event);
-    }    
+    }
 
     void seek(long currentPosition, long seekTime) {
         WritableMap event = Arguments.createMap();
@@ -234,7 +237,7 @@ class VideoEventEmitter {
 
     void playbackRateChange(float rate) {
         WritableMap map = Arguments.createMap();
-        map.putDouble(EVENT_PROP_PLAYBACK_RATE, (double)rate);
+        map.putDouble(EVENT_PROP_PLAYBACK_RATE, (double) rate);
         receiveEvent(EVENT_PLAYBACK_RATE_CHANGE, map);
     }
 
