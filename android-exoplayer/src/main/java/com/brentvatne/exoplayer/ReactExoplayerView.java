@@ -680,6 +680,18 @@ class ReactExoplayerView extends FrameLayout implements
     @Override
     public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
         String text = "onStateChanged: playWhenReady=" + playWhenReady + ", playbackState=";
+
+        //handle keepscreen on if video playing
+        // STATE_IDLE, STATE_ENDED or paused
+        if (playbackState == Player.STATE_IDLE || playbackState == Player.STATE_ENDED ||
+                !playWhenReady) {
+            exoPlayerView.setKeepScreenOn(false);
+        } else {
+            // prevent screen from getting dim/lock
+            exoPlayerView.setKeepScreenOn(true);
+        }
+
+
         switch (playbackState) {
             case Player.STATE_IDLE:
                 text += "idle";
