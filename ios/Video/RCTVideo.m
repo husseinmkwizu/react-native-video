@@ -1776,8 +1776,13 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
                         [self finishLoadingWithError:licenseError];
                         self->_requestingCertificateErrored = YES;
                       } else if (data != nil) {
-                        [dataRequest respondWithData:data];
-                        [loadingRequest finishLoading];
+//                        [dataRequest respondWithData:data];
+//                        [loadingRequest finishLoading];
+                          
+                          //decode base64 encoded license
+                          NSData *decodedData = [[NSData alloc] initWithBase64EncodedData:data options:NSDataBase64DecodingIgnoreUnknownCharacters];
+                          [dataRequest respondWithData:decodedData];
+                          [loadingRequest finishLoading];
                       } else {
                         NSError *licenseError = [NSError errorWithDomain: @"RCTVideo"
                                                                     code: RCTVideoErrorNoDataFromLicenseRequest
