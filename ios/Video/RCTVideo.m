@@ -1753,7 +1753,12 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
                   }
                   //
                   
-                  [request setHTTPBody: spcData];
+//                  [request setHTTPBody: spcData];
+                    
+                    NSString *spcBase64 = [spcData base64EncodedStringWithOptions:NSDataBase64Encoding64CharacterLineLength];
+                    NSString *body = [NSString stringWithFormat:@"spc=%@&assetId=%@",spcBase64,contentId ];
+                    [request setHTTPBody: [body dataUsingEncoding:NSUTF8StringEncoding]];
+                    
                   NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
                   NSURLSession *session = [NSURLSession sessionWithConfiguration:configuration delegate:self delegateQueue:nil];
                   NSURLSessionDataTask *postDataTask = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
