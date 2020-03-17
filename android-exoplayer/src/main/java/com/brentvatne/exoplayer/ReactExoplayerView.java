@@ -478,6 +478,7 @@ class ReactExoplayerView extends FrameLayout implements
         }
 
         try {
+            KeystoreManager.init(themedReactContext);
             KEY_OFFLINE_OFFSET_ID = this.srcUri.toString();
 
             StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
@@ -498,8 +499,9 @@ class ReactExoplayerView extends FrameLayout implements
             DefaultDrmSessionManager<FrameworkMediaCrypto> drmSessionManager = new DefaultDrmSessionManager<>(uuid,
                     FrameworkMediaDrm.newInstance(uuid), customDrmCallback, null, false, 3);
 
-            SharedPreferences sharedPreferences = themedReactContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-            String offlineAssetKeyIdStr = sharedPreferences.getString(KEY_OFFLINE_OFFSET_ID, "");
+//            SharedPreferences sharedPreferences = themedReactContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+//            String offlineAssetKeyIdStr = sharedPreferences.getString(KEY_OFFLINE_OFFSET_ID, "");
+            String offlineAssetKeyIdStr = KeystoreManager.getInstance().getPreference(KEY_OFFLINE_OFFSET_ID);
 
             byte[] offlineAssetKeyId = Base64.decode(offlineAssetKeyIdStr, Base64.DEFAULT);
             OfflineLicenseHelper offlineLicenseHelper = OfflineLicenseHelper.newWidevineInstance(licenseUrl, httpDataSourceFactory);
@@ -518,7 +520,7 @@ class ReactExoplayerView extends FrameLayout implements
 
                 DashManifest dashManifest = DashUtil.loadManifest(dataSource, this.srcUri);
                 DrmInitData drmInitData = DashUtil.loadDrmInitData(dataSource, dashManifest.getPeriod(0));
-                if(drmInitData == null){
+                if (drmInitData == null) {
                     return null;
                 }
 
@@ -536,10 +538,12 @@ class ReactExoplayerView extends FrameLayout implements
 
                 }
 
-                SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putString(KEY_OFFLINE_OFFSET_ID,
-                        Base64.encodeToString(offlineAssetKeyId, Base64.DEFAULT));
-                editor.commit();
+//                SharedPreferences.Editor editor = sharedPreferences.edit();
+//                editor.putString(KEY_OFFLINE_OFFSET_ID,
+//                        Base64.encodeToString(offlineAssetKeyId, Base64.DEFAULT));
+//                editor.commit();
+
+                KeystoreManager.getInstance().setPreference(KEY_OFFLINE_OFFSET_ID, Base64.encodeToString(offlineAssetKeyId, Base64.DEFAULT));
             }
 
 
