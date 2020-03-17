@@ -13,6 +13,9 @@ import android.view.View;
 import android.view.Window;
 import android.view.accessibility.CaptioningManager;
 import android.widget.FrameLayout;
+import android.util.Base64;
+import android.util.Pair;
+import android.content.SharedPreferences;
 
 import com.brentvatne.react.R;
 import com.brentvatne.receiver.AudioBecomingNoisyReceiver;
@@ -35,9 +38,16 @@ import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.Timeline;
+import com.google.android.exoplayer2.source.dash.manifest.Representation;
+import com.google.android.exoplayer2.source.dash.manifest.AdaptationSet;
+import com.google.android.exoplayer2.source.dash.manifest.Period;
+import com.google.android.exoplayer2.source.dash.DashUtil;
+import com.google.android.exoplayer2.drm.DrmInitData;
+import com.google.android.exoplayer2.drm.DrmSession;
 import com.google.android.exoplayer2.drm.DefaultDrmSessionManager;
 import com.google.android.exoplayer2.drm.DefaultDrmSessionEventListener;
 import com.google.android.exoplayer2.drm.DrmSessionManager;
+import com.google.android.exoplayer2.drm.OfflineLicenseHelper;
 import com.google.android.exoplayer2.drm.FrameworkMediaCrypto;
 import com.google.android.exoplayer2.drm.FrameworkMediaDrm;
 import com.google.android.exoplayer2.drm.HttpMediaDrmCallback;
@@ -55,7 +65,9 @@ import com.google.android.exoplayer2.source.TrackGroup;
 import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.source.dash.DashMediaSource;
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource;
+import com.google.android.exoplayer2.source.dash.manifest.DashManifest;
 import com.google.android.exoplayer2.source.hls.HlsMediaSource;
+import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory;
 import com.google.android.exoplayer2.source.smoothstreaming.DefaultSsChunkSource;
 import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource;
 import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection;
@@ -75,9 +87,14 @@ import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.Map;
+import java.io.IOException;
+
+import android.os.StrictMode;
+
 
 @SuppressLint("ViewConstructor")
 class ReactExoplayerView extends FrameLayout implements
@@ -90,6 +107,9 @@ class ReactExoplayerView extends FrameLayout implements
         DefaultDrmSessionEventListener {
 
     private static final String TAG = "ReactExoplayerView";
+    public static final String PREF_NAME = "pref";
+    //public static final String KEY_OFFLINE_OFFSET_ID = "key_offline_offset_id";
+    private String KEY_OFFLINE_OFFSET_ID = "key_offline_offset_id";
 
     private static final CookieManager DEFAULT_COOKIE_MANAGER;
     private static final int SHOW_PROGRESS = 1;
@@ -375,7 +395,9 @@ class ReactExoplayerView extends FrameLayout implements
                     DrmSessionManager<FrameworkMediaCrypto> drmSessionManager = null;
                     if (self.drmUUID != null) {
                         try {
-                            drmSessionManager = buildDrmSessionManager(self.drmUUID, self.drmLicenseUrl,
+//                            drmSessionManager = buildDrmSessionManager(self.drmUUID, self.drmLicenseUrl,
+//                                    self.drmLicenseHeader);
+                            drmSessionManager = buildOfflineDrmSessionManager(self.drmUUID, self.drmLicenseUrl,
                                     self.drmLicenseHeader);
                         } catch (UnsupportedDrmException e) {
                             int errorStringId = Util.SDK_INT < 18 ? R.string.error_drm_not_supported
@@ -447,6 +469,89 @@ class ReactExoplayerView extends FrameLayout implements
         }
         return new DefaultDrmSessionManager<>(uuid,
                 FrameworkMediaDrm.newInstance(uuid), drmCallback, null, false, 3);
+    }
+
+    private DrmSessionManager<FrameworkMediaCrypto> buildOfflineDrmSessionManager(UUID uuid,
+                                                                                  String licenseUrl, String[] keyRequestPropertiesArray) throws UnsupportedDrmException {
+        if (Util.SDK_INT < 18) {
+            return null;
+        }
+
+        try {
+            KEY_OFFLINE_OFFSET_ID = this.srcUri.toString();
+
+            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+            StrictMode.setThreadPolicy(policy);
+
+
+            HttpDataSource.Factory httpDataSourceFactory = buildHttpDataSourceFactory(false);
+            if (keyRequestPropertiesArray != null) {
+                for (int i = 0; i < keyRequestPropertiesArray.length - 1; i += 2) {
+                    httpDataSourceFactory.setDefaultRequestProperty(keyRequestPropertiesArray[i],
+                            keyRequestPropertiesArray[i + 1]);
+                }
+            }
+
+            HttpMediaDrmCallback customDrmCallback = new HttpMediaDrmCallback(licenseUrl,
+                    httpDataSourceFactory);
+
+            DefaultDrmSessionManager<FrameworkMediaCrypto> drmSessionManager = new DefaultDrmSessionManager<>(uuid,
+                    FrameworkMediaDrm.newInstance(uuid), customDrmCallback, null, false, 3);
+
+            SharedPreferences sharedPreferences = themedReactContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+            String offlineAssetKeyIdStr = sharedPreferences.getString(KEY_OFFLINE_OFFSET_ID, "");
+
+            byte[] offlineAssetKeyId = Base64.decode(offlineAssetKeyIdStr, Base64.DEFAULT);
+            OfflineLicenseHelper offlineLicenseHelper = OfflineLicenseHelper.newWidevineInstance(licenseUrl, httpDataSourceFactory);
+
+            Pair<Long, Long> remainingSecPair = null;
+            if (offlineAssetKeyId != null && offlineAssetKeyIdStr != "") {
+                remainingSecPair = offlineLicenseHelper.getLicenseDurationRemainingSec(offlineAssetKeyId);
+                Log.e(TAG, " License remaining Play time : " + remainingSecPair.first + ", Purchase time : " + remainingSecPair.second);
+            }
+
+            if (remainingSecPair == null || offlineAssetKeyIdStr == "" || (remainingSecPair.first == 0 || remainingSecPair.second == 0)) {
+
+                Log.e(TAG, "LICENSE DOWNLOADING...: ");
+
+                HttpDataSource dataSource = httpDataSourceFactory.createDataSource();
+
+                DashManifest dashManifest = DashUtil.loadManifest(dataSource, this.srcUri);
+                DrmInitData drmInitData = DashUtil.loadDrmInitData(dataSource, dashManifest.getPeriod(0));
+                offlineAssetKeyId = offlineLicenseHelper.downloadLicense(drmInitData);
+
+                Log.e(TAG, "LICENSE DOWNLOADED : ");
+
+                Pair<Long, Long> p = offlineLicenseHelper.getLicenseDurationRemainingSec(offlineAssetKeyId);
+                Log.e(TAG, "download done!");
+
+                if (p != null) {
+                    Log.e(TAG, "download done : " + p.toString());
+                    Log.e(TAG, "download done, Play time remaining : " + p.first);
+                    Log.e(TAG, "download done, Purchase time : " + p.second);
+
+                }
+
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putString(KEY_OFFLINE_OFFSET_ID,
+                        Base64.encodeToString(offlineAssetKeyId, Base64.DEFAULT));
+                editor.commit();
+            }
+
+
+            drmSessionManager.setMode(DefaultDrmSessionManager.MODE_QUERY, offlineAssetKeyId);
+            return drmSessionManager;
+
+        } catch (IOException e) {
+            Log.d(TAG, "EXCEPTION: " + e.toString());
+            return null;
+        } catch (DrmSession.DrmSessionException e) {
+            Log.d(TAG, "EXCEPTION: " + e.toString());
+            return null;
+        } catch (InterruptedException e) {
+            Log.d(TAG, "EXCEPTION: " + e.toString());
+            return null;
+        }
     }
 
     private MediaSource buildMediaSource(Uri uri, String overrideExtension) {
