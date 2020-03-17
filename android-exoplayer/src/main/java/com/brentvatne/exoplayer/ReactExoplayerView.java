@@ -518,6 +518,10 @@ class ReactExoplayerView extends FrameLayout implements
 
                 DashManifest dashManifest = DashUtil.loadManifest(dataSource, this.srcUri);
                 DrmInitData drmInitData = DashUtil.loadDrmInitData(dataSource, dashManifest.getPeriod(0));
+                if(drmInitData == null){
+                    return null;
+                }
+
                 offlineAssetKeyId = offlineLicenseHelper.downloadLicense(drmInitData);
 
                 Log.e(TAG, "LICENSE DOWNLOADED : ");
