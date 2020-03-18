@@ -173,6 +173,7 @@ class ReactExoplayerView extends FrameLayout implements
     private UUID drmUUID = null;
     private String drmLicenseUrl = null;
     private String[] drmLicenseHeader = null;
+    private boolean drmLicenseShouldPersist = false;
     private boolean controls;
     // \ End props
 
@@ -395,10 +396,16 @@ class ReactExoplayerView extends FrameLayout implements
                     DrmSessionManager<FrameworkMediaCrypto> drmSessionManager = null;
                     if (self.drmUUID != null) {
                         try {
-//                            drmSessionManager = buildDrmSessionManager(self.drmUUID, self.drmLicenseUrl,
-//                                    self.drmLicenseHeader);
-                            drmSessionManager = buildOfflineDrmSessionManager(self.drmUUID, self.drmLicenseUrl,
-                                    self.drmLicenseHeader);
+
+                            if (self.drmLicenseShouldPersist) {
+                                drmSessionManager = buildOfflineDrmSessionManager(self.drmUUID, self.drmLicenseUrl,
+                                        self.drmLicenseHeader);
+                            } else {
+                                drmSessionManager = buildDrmSessionManager(self.drmUUID, self.drmLicenseUrl,
+                                        self.drmLicenseHeader);
+                            }
+
+
                         } catch (UnsupportedDrmException e) {
                             int errorStringId = Util.SDK_INT < 18 ? R.string.error_drm_not_supported
                                     : (e.reason == UnsupportedDrmException.REASON_UNSUPPORTED_SCHEME
@@ -1399,6 +1406,9 @@ class ReactExoplayerView extends FrameLayout implements
         this.drmLicenseHeader = header;
     }
 
+    public void setDrmLicenseShouldPersist(boolean flag) {
+        this.drmLicenseShouldPersist = flag;
+    }
 
     @Override
     public void onDrmKeysLoaded() {

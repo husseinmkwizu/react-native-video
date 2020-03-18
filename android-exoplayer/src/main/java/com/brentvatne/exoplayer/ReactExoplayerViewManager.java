@@ -35,6 +35,7 @@ public class ReactExoplayerViewManager extends ViewGroupManager<ReactExoplayerVi
     private static final String PROP_DRM = "drm";
     private static final String PROP_DRM_TYPE = "type";
     private static final String PROP_DRM_LICENSESERVER = "licenseServer";
+    private static final String PROP_DRM_LICENSE_SHOULD_PERSIST = "licenseShouldPersist";
     private static final String PROP_DRM_HEADERS = "headers";
     private static final String PROP_SRC_HEADERS = "requestHeaders";
     private static final String PROP_RESIZE_MODE = "resizeMode";
@@ -113,6 +114,7 @@ public class ReactExoplayerViewManager extends ViewGroupManager<ReactExoplayerVi
     @ReactProp(name = PROP_DRM)
     public void setDRM(final ReactExoplayerView videoView, @Nullable ReadableMap drm) {
         if (drm != null && drm.hasKey(PROP_DRM_TYPE)) {
+            boolean licenseShouldPersist = drm.hasKey(PROP_DRM_LICENSE_SHOULD_PERSIST) ? drm.getBoolean(PROP_DRM_LICENSE_SHOULD_PERSIST) : false;
             String drmType = drm.hasKey(PROP_DRM_TYPE) ? drm.getString(PROP_DRM_TYPE) : null;
             String drmLicenseServer = drm.hasKey(PROP_DRM_LICENSESERVER) ? drm.getString(PROP_DRM_LICENSESERVER) : null;
             ReadableMap drmHeaders = drm.hasKey(PROP_DRM_HEADERS) ? drm.getMap(PROP_DRM_HEADERS) : null;
@@ -131,6 +133,7 @@ public class ReactExoplayerViewManager extends ViewGroupManager<ReactExoplayerVi
                     videoView.setDrmLicenseHeader(drmKeyRequestPropertiesList.toArray(new String[0]));
                 }
                 videoView.setUseTextureView(false);
+                videoView.setDrmLicenseShouldPersist(licenseShouldPersist);
             }
         }
     }
