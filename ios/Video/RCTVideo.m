@@ -1805,31 +1805,35 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
                           NSData *decodedData = [[NSData alloc] initWithBase64EncodedData:data options:NSDataBase64DecodingIgnoreUnknownCharacters];
                           
                           
-                          //-- handle non persistent license
-                          if(licenseShouldPersist == nil || ![licenseShouldPersist boolValue]){
+                          //-- handle persistent license
+                          if (licenseShouldPersist != nil && [licenseShouldPersist boolValue]) {
+                              
+                                NSError *offlineError = nil;
+                                NSData *offlineKey = [loadingRequest persistentContentKeyFromKeyVendorResponse:decodedData options:options error:&offlineError];
+                                //save
+                                if(offlineError == nil && offlineKey != nil){
+                                    [[NSUserDefaults standardUserDefaults] setObject:offlineKey forKey:contentId];
+                                    [[NSUserDefaults standardUserDefaults] synchronize];
+                                  
+        //                              [[loadingRequest contentInformationRequest] setContentType:AVStreamingKeyDeliveryContentKeyType];
+                                    [[loadingRequest contentInformationRequest] setContentType:AVStreamingKeyDeliveryPersistentContentKeyType];
+                                    [[loadingRequest contentInformationRequest] setByteRangeAccessSupported:YES];
+                                    [[loadingRequest contentInformationRequest] setContentLength:offlineKey.length];
+                                    
+        //                              NSDate *renewDate = [[NSDate date] addTimeInterval:2592000]; // 30days
+        //                              [[loadingRequest contentInformationRequest] setRenewalDate:renewDate];
+                                    [dataRequest respondWithData:offlineKey];
+                                    [loadingRequest finishLoading];
+                                }
+                              
+                          }else{
+                              
+                              //-- handle non persistent license
                               [dataRequest respondWithData:decodedData];
                               [loadingRequest finishLoading];
                           }
                           
-                          
-                          //-- handle persistent license
-                          NSError *offlineError = nil;
-                          NSData *offlineKey = [loadingRequest persistentContentKeyFromKeyVendorResponse:decodedData options:options error:&offlineError];
-                          //save
-                          if(offlineError == nil && offlineKey != nil && licenseShouldPersist != nil && [licenseShouldPersist boolValue]){
-                              [[NSUserDefaults standardUserDefaults] setObject:offlineKey forKey:contentId];
-                              [[NSUserDefaults standardUserDefaults] synchronize];
-                            
-//                              [[loadingRequest contentInformationRequest] setContentType:AVStreamingKeyDeliveryContentKeyType];
-                              [[loadingRequest contentInformationRequest] setContentType:AVStreamingKeyDeliveryPersistentContentKeyType];
-                              [[loadingRequest contentInformationRequest] setByteRangeAccessSupported:YES];
-                              [[loadingRequest contentInformationRequest] setContentLength:offlineKey.length];
-                              
-//                              NSDate *renewDate = [[NSDate date] addTimeInterval:2592000]; // 30days
-//                              [[loadingRequest contentInformationRequest] setRenewalDate:renewDate];
-                              [dataRequest respondWithData:offlineKey];
-                              [loadingRequest finishLoading];
-                          }
+
                           
 
                           
