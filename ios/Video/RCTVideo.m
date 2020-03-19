@@ -1712,6 +1712,21 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
     if ([drmType isEqualToString:@"fairplay"]) {
       NSString *certificateStringUrl = (NSString *)[self->_drm objectForKey:@"certificateUrl"];
       if (certificateStringUrl != nil) {
+          
+        //-- handle persistent license
+        //get saved key
+        NSData *storedKey = [[NSUserDefaults standardUserDefaults] dataForKey:contentId];
+        if (storedKey != nil && loadingRequest.dataRequest  != nil) {
+            self->_requestingCertificate = YES;
+            [[loadingRequest contentInformationRequest] setContentType:AVStreamingKeyDeliveryPersistentContentKeyType];
+            [[loadingRequest contentInformationRequest] setByteRangeAccessSupported:YES];
+            [[loadingRequest contentInformationRequest] setContentLength:storedKey.length];
+
+            [loadingRequest.dataRequest respondWithData:storedKey];
+            [loadingRequest finishLoading];
+            return YES;
+         }
+          
         NSURL *certificateURL = [NSURL URLWithString:[certificateStringUrl stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
           NSData *certificateData = [NSData dataWithContentsOfURL:certificateURL];
@@ -1724,7 +1739,8 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
             AVAssetResourceLoadingDataRequest *dataRequest = [loadingRequest dataRequest];
             if (dataRequest != nil) {
               NSError *spcError = nil;
-              NSData *spcData = [loadingRequest streamingContentKeyRequestDataForApp:certificateData contentIdentifier:contentIdData options:nil error:&spcError];
+              NSDictionary *options =  @{AVAssetResourceLoadingRequestStreamingContentKeyRequestRequiresPersistentKey : [NSNumber numberWithBool:YES]};
+              NSData *spcData = [loadingRequest streamingContentKeyRequestDataForApp:certificateData contentIdentifier:contentIdData options:options error:&spcError];
               // Request CKC to the server
               NSString *licenseServer = (NSString *)[self->_drm objectForKey:@"licenseServer"];
               if (spcError != nil) {
@@ -1786,8 +1802,34 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
                           
                           //decode base64 encoded license
                           NSData *decodedData = [[NSData alloc] initWithBase64EncodedData:data options:NSDataBase64DecodingIgnoreUnknownCharacters];
-                          [dataRequest respondWithData:decodedData];
-                          [loadingRequest finishLoading];
+                          
+                          
+//                          //-- handle non persistent license
+//                          [dataRequest respondWithData:decodedData];
+//                          [loadingRequest finishLoading];
+                          
+                          
+                          //-- handle persistent license
+                          NSError *offlineError = nil;
+                          NSData *offlineKey = [loadingRequest persistentContentKeyFromKeyVendorResponse:decodedData options:options error:&offlineError];
+                          //save
+                          if(offlineError == nil && offlineKey != nil){
+                              [[NSUserDefaults standardUserDefaults] setObject:offlineKey forKey:contentId];
+                              [[NSUserDefaults standardUserDefaults] synchronize];
+                            
+//                              [[loadingRequest contentInformationRequest] setContentType:AVStreamingKeyDeliveryContentKeyType];
+                              [[loadingRequest contentInformationRequest] setContentType:AVStreamingKeyDeliveryPersistentContentKeyType];
+                              [[loadingRequest contentInformationRequest] setByteRangeAccessSupported:YES];
+                              [[loadingRequest contentInformationRequest] setContentLength:offlineKey.length];
+                              
+//                              NSDate *renewDate = [[NSDate date] addTimeInterval:2592000]; // 30days
+//                              [[loadingRequest contentInformationRequest] setRenewalDate:renewDate];
+                              [dataRequest respondWithData:offlineKey];
+                              [loadingRequest finishLoading];
+                          }
+                          
+
+                          
                       } else {
                         NSError *licenseError = [NSError errorWithDomain: @"RCTVideo"
                                                                     code: RCTVideoErrorNoDataFromLicenseRequest
