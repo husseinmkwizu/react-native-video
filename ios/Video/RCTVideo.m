@@ -1715,8 +1715,9 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
           
         //-- handle persistent license
         //get saved key
+        NSNumber *licenseShouldPersist = (NSNumber *)[self->_drm objectForKey:@"licenseShouldPersist"];
         NSData *storedKey = [[NSUserDefaults standardUserDefaults] dataForKey:contentId];
-        if (storedKey != nil && loadingRequest.dataRequest  != nil) {
+        if (storedKey != nil && loadingRequest.dataRequest  != nil && licenseShouldPersist != nil && [licenseShouldPersist boolValue]) {
             self->_requestingCertificate = YES;
             [[loadingRequest contentInformationRequest] setContentType:AVStreamingKeyDeliveryPersistentContentKeyType];
             [[loadingRequest contentInformationRequest] setByteRangeAccessSupported:YES];
@@ -1804,16 +1805,18 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
                           NSData *decodedData = [[NSData alloc] initWithBase64EncodedData:data options:NSDataBase64DecodingIgnoreUnknownCharacters];
                           
                           
-//                          //-- handle non persistent license
-//                          [dataRequest respondWithData:decodedData];
-//                          [loadingRequest finishLoading];
+                          //-- handle non persistent license
+                          if(licenseShouldPersist == nil || ![licenseShouldPersist boolValue]){
+                              [dataRequest respondWithData:decodedData];
+                              [loadingRequest finishLoading];
+                          }
                           
                           
                           //-- handle persistent license
                           NSError *offlineError = nil;
                           NSData *offlineKey = [loadingRequest persistentContentKeyFromKeyVendorResponse:decodedData options:options error:&offlineError];
                           //save
-                          if(offlineError == nil && offlineKey != nil){
+                          if(offlineError == nil && offlineKey != nil && licenseShouldPersist != nil && [licenseShouldPersist boolValue]){
                               [[NSUserDefaults standardUserDefaults] setObject:offlineKey forKey:contentId];
                               [[NSUserDefaults standardUserDefaults] synchronize];
                             
