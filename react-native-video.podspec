@@ -30,6 +30,7 @@ Pod::Spec.new do |s|
   end
 
   s.dependency "React"
+  s.dependency "UICKeyChainStore"
 
   s.default_subspec = "Video"
 

@@ -5,6 +5,7 @@
 #import <React/UIView+React.h>
 #include <MediaAccessibility/MediaAccessibility.h>
 #include <AVFoundation/AVFoundation.h>
+#import "KeychainHelper.h"
 
 static NSString *const statusKeyPath = @"status";
 static NSString *const playbackLikelyToKeepUpKeyPath = @"playbackLikelyToKeepUp";
@@ -1716,8 +1717,15 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
         //-- handle persistent license
         //get saved key
         NSNumber *licenseShouldPersist = (NSNumber *)[self->_drm objectForKey:@"licenseShouldPersist"];
-        NSData *storedKey = [[NSUserDefaults standardUserDefaults] dataForKey:contentId];
-        if (storedKey != nil && loadingRequest.dataRequest  != nil && licenseShouldPersist != nil && [licenseShouldPersist boolValue]) {
+
+        //NSData *storedKey = [[NSUserDefaults standardUserDefaults] dataForKey:contentId];
+        NSData *storedKey = [[KeychainHelper sharedInstance] dataForKey:contentId];
+        
+        NSString *offlineSecondsStringKey = [NSString stringWithFormat:@"%@_key",contentId];
+        NSString *licenseExpiresAt = [[KeychainHelper sharedInstance] stringForKey:offlineSecondsStringKey];
+        double nowUtc = [[NSDate date]timeIntervalSince1970];
+          
+        if (storedKey != nil && loadingRequest.dataRequest  != nil && licenseShouldPersist != nil && [licenseShouldPersist boolValue] && licenseExpiresAt != nil && [licenseExpiresAt doubleValue] > nowUtc) {
             self->_requestingCertificate = YES;
             [[loadingRequest contentInformationRequest] setContentType:AVStreamingKeyDeliveryPersistentContentKeyType];
             [[loadingRequest contentInformationRequest] setByteRangeAccessSupported:YES];
@@ -1812,8 +1820,19 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
                                 NSData *offlineKey = [loadingRequest persistentContentKeyFromKeyVendorResponse:decodedData options:options error:&offlineError];
                                 //save
                                 if(offlineError == nil && offlineKey != nil){
-                                    [[NSUserDefaults standardUserDefaults] setObject:offlineKey forKey:contentId];
-                                    [[NSUserDefaults standardUserDefaults] synchronize];
+                                    //renewal date
+                                    NSNumber *persistenceSeconds = (NSNumber *)[self->_drm objectForKey:@"persistenceSeconds"];
+                                    if(persistenceSeconds != nil && [persistenceSeconds doubleValue] > 0){
+                                        double secsUtc = [[NSDate date]timeIntervalSince1970]+[persistenceSeconds doubleValue];
+                                        NSString *secString = [NSString stringWithFormat:@"%f",secsUtc];
+                                        [[KeychainHelper sharedInstance] setString:secString forKey:offlineSecondsStringKey];
+                                    }
+                                    
+                                    
+//                                    [[NSUserDefaults standardUserDefaults] setObject:offlineKey forKey:contentId];
+//                                    [[NSUserDefaults standardUserDefaults] synchronize];
+                                    
+                                    [[KeychainHelper sharedInstance] setData:offlineKey forKey:contentId];
                                   
         //                              [[loadingRequest contentInformationRequest] setContentType:AVStreamingKeyDeliveryContentKeyType];
                                     [[loadingRequest contentInformationRequest] setContentType:AVStreamingKeyDeliveryPersistentContentKeyType];
