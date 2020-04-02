@@ -1776,7 +1776,7 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
                                     NSDictionary *jsonDict = [NSJSONSerialization JSONObjectWithData:contentIdData options:NSJSONReadingAllowFragments error:&err];
                                     NSString *contentIDForAuth = @"";
                                     if (jsonDict != nil) {
-                                        [jsonDict objectForKey:@"contentId"];
+                                        contentIDForAuth = [jsonDict objectForKey:@"ContentId"];
                                     }
                                     
                                     [self performAuthTokenRequestWithContentId:contentIDForAuth completion:^(NSString *token, NSError *error) {
