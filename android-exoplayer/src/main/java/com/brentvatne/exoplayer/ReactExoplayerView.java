@@ -415,8 +415,10 @@ class ReactExoplayerView extends FrameLayout implements
 //                                        self.drmLicenseHeader);
 //                            }
 
-                            drmSessionManager = buildNagraDrmSessionManager(self.drmUUID, self.drmLicenseUrl,
-                                    self.drmLicenseHeader);
+//                            drmSessionManager = buildNagraDrmSessionManager(self.drmUUID, self.drmLicenseUrl,
+//                                    self.drmLicenseHeader);
+
+                            drmSessionManager = buildDrmSessionManager(self.drmUUID, self.drmLicenseUrl, self.drmLicenseHeader);
 
                         } catch (UnsupportedDrmException e) {
                             int errorStringId = Util.SDK_INT < 18 ? R.string.error_drm_not_supported
@@ -478,8 +480,13 @@ class ReactExoplayerView extends FrameLayout implements
         if (Util.SDK_INT < 18) {
             return null;
         }
-        HttpMediaDrmCallback drmCallback = new HttpMediaDrmCallback(licenseUrl,
-                buildHttpDataSourceFactory(false));
+
+//        HttpMediaDrmCallback drmCallback = new HttpMediaDrmCallback(licenseUrl,
+//                buildHttpDataSourceFactory(false));
+
+        WidevineMediaDrmCallback drmCallback = new WidevineMediaDrmCallback(licenseUrl,
+                buildHttpDataSourceFactory(false),this.srcUri,this.azamToken,this.drmAuthTokenURL);
+
         if (keyRequestPropertiesArray != null) {
             for (int i = 0; i < keyRequestPropertiesArray.length - 1; i += 2) {
                 drmCallback.setKeyRequestProperty(keyRequestPropertiesArray[i],
