@@ -36,6 +36,8 @@ public class ReactExoplayerViewManager extends ViewGroupManager<ReactExoplayerVi
     private static final String PROP_DRM_TYPE = "type";
     private static final String PROP_DRM_LICENSESERVER = "licenseServer";
     private static final String PROP_DRM_LICENSE_SHOULD_PERSIST = "licenseShouldPersist";
+    private static final String PROP_DRM_AUTH_TOKEN_URL = "drmAuthTokenURL";
+    private static final String PROP_AZAM_TOKEN = "azamToken";
     private static final String PROP_DRM_HEADERS = "headers";
     private static final String PROP_SRC_HEADERS = "requestHeaders";
     private static final String PROP_RESIZE_MODE = "resizeMode";
@@ -117,11 +119,17 @@ public class ReactExoplayerViewManager extends ViewGroupManager<ReactExoplayerVi
             boolean licenseShouldPersist = drm.hasKey(PROP_DRM_LICENSE_SHOULD_PERSIST) ? drm.getBoolean(PROP_DRM_LICENSE_SHOULD_PERSIST) : false;
             String drmType = drm.hasKey(PROP_DRM_TYPE) ? drm.getString(PROP_DRM_TYPE) : null;
             String drmLicenseServer = drm.hasKey(PROP_DRM_LICENSESERVER) ? drm.getString(PROP_DRM_LICENSESERVER) : null;
+            String drmAuthTokenURL = drm.hasKey(PROP_DRM_AUTH_TOKEN_URL) ? drm.getString(PROP_DRM_AUTH_TOKEN_URL) : null;
+            String azamToken = drm.hasKey(PROP_AZAM_TOKEN) ? drm.getString(PROP_AZAM_TOKEN) : null;
+
             ReadableMap drmHeaders = drm.hasKey(PROP_DRM_HEADERS) ? drm.getMap(PROP_DRM_HEADERS) : null;
             if (drmType != null && drmLicenseServer != null && Util.getDrmUuid(drmType) != null) {
                 UUID drmUUID = Util.getDrmUuid(drmType);
                 videoView.setDrmType(drmUUID);
                 videoView.setDrmLicenseUrl(drmLicenseServer);
+                videoView.setDrmAuthTokenURL(drmAuthTokenURL);
+                videoView.setAzamToken(azamToken);
+
                 if (drmHeaders != null) {
                     ArrayList<String> drmKeyRequestPropertiesList = new ArrayList<>();
                     ReadableMapKeySetIterator itr = drmHeaders.keySetIterator();

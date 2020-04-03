@@ -43,6 +43,7 @@ import com.google.android.exoplayer2.source.dash.manifest.AdaptationSet;
 import com.google.android.exoplayer2.source.dash.manifest.Period;
 import com.google.android.exoplayer2.source.dash.DashUtil;
 import com.google.android.exoplayer2.drm.DrmInitData;
+import com.google.android.exoplayer2.drm.DrmInitData.SchemeData;
 import com.google.android.exoplayer2.drm.DrmSession;
 import com.google.android.exoplayer2.drm.DefaultDrmSessionManager;
 import com.google.android.exoplayer2.drm.DefaultDrmSessionEventListener;
@@ -91,7 +92,14 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.Map;
+import java.util.HashMap;
 import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.io.InputStream;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.os.StrictMode;
 
@@ -174,6 +182,8 @@ class ReactExoplayerView extends FrameLayout implements
     private String drmLicenseUrl = null;
     private String[] drmLicenseHeader = null;
     private boolean drmLicenseShouldPersist = false;
+    private String azamToken = null;
+    private String drmAuthTokenURL = null;
     private boolean controls;
     // \ End props
 
@@ -397,14 +407,16 @@ class ReactExoplayerView extends FrameLayout implements
                     if (self.drmUUID != null) {
                         try {
 
-                            if (self.drmLicenseShouldPersist) {
-                                drmSessionManager = buildOfflineDrmSessionManager(self.drmUUID, self.drmLicenseUrl,
-                                        self.drmLicenseHeader);
-                            } else {
-                                drmSessionManager = buildDrmSessionManager(self.drmUUID, self.drmLicenseUrl,
-                                        self.drmLicenseHeader);
-                            }
+//                            if (self.drmLicenseShouldPersist) {
+//                                drmSessionManager = buildOfflineDrmSessionManager(self.drmUUID, self.drmLicenseUrl,
+//                                        self.drmLicenseHeader);
+//                            } else {
+//                                drmSessionManager = buildDrmSessionManager(self.drmUUID, self.drmLicenseUrl,
+//                                        self.drmLicenseHeader);
+//                            }
 
+                            drmSessionManager = buildNagraDrmSessionManager(self.drmUUID, self.drmLicenseUrl,
+                                    self.drmLicenseHeader);
 
                         } catch (UnsupportedDrmException e) {
                             int errorStringId = Util.SDK_INT < 18 ? R.string.error_drm_not_supported
@@ -561,6 +573,82 @@ class ReactExoplayerView extends FrameLayout implements
             Log.d(TAG, "EXCEPTION: " + e.toString());
             return null;
         } catch (DrmSession.DrmSessionException e) {
+            Log.d(TAG, "EXCEPTION: " + e.toString());
+            return null;
+        } catch (InterruptedException e) {
+            Log.d(TAG, "EXCEPTION: " + e.toString());
+            return null;
+        }
+    }
+
+    private DrmSessionManager<FrameworkMediaCrypto> buildNagraDrmSessionManager(UUID uuid,
+                                                                                String licenseUrl, String[] keyRequestPropertiesArray) throws UnsupportedDrmException {
+        if (Util.SDK_INT < 18) {
+            return null;
+        }
+
+        try {
+
+            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+            StrictMode.setThreadPolicy(policy);
+
+            HttpDataSource.Factory httpDataSourceFactory = buildHttpDataSourceFactory(false);
+            if (keyRequestPropertiesArray != null) {
+                for (int i = 0; i < keyRequestPropertiesArray.length - 1; i += 2) {
+                    httpDataSourceFactory.setDefaultRequestProperty(keyRequestPropertiesArray[i],
+                            keyRequestPropertiesArray[i + 1]);
+                }
+            }
+
+            HttpMediaDrmCallback customDrmCallback = new HttpMediaDrmCallback(licenseUrl,
+                    httpDataSourceFactory);
+
+            DefaultDrmSessionManager<FrameworkMediaCrypto> drmSessionManager = new DefaultDrmSessionManager<>(uuid,
+                    FrameworkMediaDrm.newInstance(uuid), customDrmCallback, null, false, 3);
+
+            HttpDataSource dataSource = httpDataSourceFactory.createDataSource();
+
+            DashManifest dashManifest = DashUtil.loadManifest(dataSource, this.srcUri);
+            DrmInitData drmInitData = DashUtil.loadDrmInitData(dataSource, dashManifest.getPeriod(0));
+            if (drmInitData == null) {
+                return null;
+            }
+
+            SchemeData scheme = drmInitData.get(C.WIDEVINE_UUID);
+            String schemeStr = Util.fromUtf8Bytes(scheme.data);
+            String[] parts = schemeStr.split("\n");
+            String contentId = parts[parts.length - 1];
+//            Log.e(TAG, "ContentID:" + contentId);
+
+            //------ fetch Nagra token
+            Map<String, String> params = new HashMap<>();
+            params.put("Authorization", "Bearer " + this.azamToken);
+            byte[] data = this.executeGet(this.drmAuthTokenURL + "?contentId=" + contentId, params);
+
+            try {
+                JSONObject jsonObject = new JSONObject(new String(data));
+
+                if (!jsonObject.isNull("success")) {
+                    boolean success = jsonObject.getBoolean("success");
+
+                    if (success && !jsonObject.isNull("data")) {
+                        JSONObject dataObj = jsonObject.getJSONObject("data");
+
+                        if (!dataObj.isNull("token")) {
+                            String token = dataObj.getString("token");
+                            httpDataSourceFactory.setDefaultRequestProperty("nv-authorizations", token);
+
+                        }
+                    }
+                }
+
+            } catch (JSONException ex) {
+                Log.d("DRM:", ex.toString());
+            }
+
+            return drmSessionManager;
+
+        } catch (IOException e) {
             Log.d(TAG, "EXCEPTION: " + e.toString());
             return null;
         } catch (InterruptedException e) {
@@ -1410,6 +1498,14 @@ class ReactExoplayerView extends FrameLayout implements
         this.drmLicenseShouldPersist = flag;
     }
 
+    public void setDrmAuthTokenURL(String tokenURL) {
+        this.drmAuthTokenURL = tokenURL;
+    }
+
+    public void setAzamToken(String azToken) {
+        this.azamToken = azToken;
+    }
+
     @Override
     public void onDrmKeysLoaded() {
         Log.d("DRM Info", "onDrmKeysLoaded");
@@ -1445,6 +1541,34 @@ class ReactExoplayerView extends FrameLayout implements
             int indexOfPC = indexOfChild(playerControlView);
             if (indexOfPC != -1) {
                 removeViewAt(indexOfPC);
+            }
+        }
+    }
+
+
+    public byte[] executeGet(String url, Map<String, String> requestProperties)
+            throws IOException {
+        HttpURLConnection urlConnection = null;
+        try {
+            urlConnection = (HttpURLConnection) new URL(url).openConnection();
+            urlConnection.setRequestMethod("GET");
+            urlConnection.setDoInput(true);
+            if (requestProperties != null) {
+                for (Map.Entry<String, String> requestProperty : requestProperties.entrySet()) {
+                    urlConnection.setRequestProperty(requestProperty.getKey(), requestProperty.getValue());
+                }
+            }
+
+            // Read and return the response body.
+            InputStream inputStream = urlConnection.getInputStream();
+            try {
+                return Util.toByteArray(inputStream);
+            } finally {
+                inputStream.close();
+            }
+        } finally {
+            if (urlConnection != null) {
+                urlConnection.disconnect();
             }
         }
     }
