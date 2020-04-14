@@ -47,6 +47,7 @@ class VideoEventEmitter {
     private static final String EVENT_AUDIO_BECOMING_NOISY = "onVideoAudioBecomingNoisy";
     private static final String EVENT_AUDIO_FOCUS_CHANGE = "onAudioFocusChanged";
     private static final String EVENT_PLAYBACK_RATE_CHANGE = "onPlaybackRateChange";
+    private static final String EVENT_DRM_KEYS_ACQUIRED = "onDRMKeysAcquired";
 
     static final String[] Events = {
             EVENT_LOAD_START,
@@ -69,6 +70,7 @@ class VideoEventEmitter {
             EVENT_AUDIO_FOCUS_CHANGE,
             EVENT_PLAYBACK_RATE_CHANGE,
             EVENT_BANDWIDTH,
+            EVENT_DRM_KEYS_ACQUIRED,
     };
 
     @Retention(RetentionPolicy.SOURCE)
@@ -93,6 +95,7 @@ class VideoEventEmitter {
             EVENT_AUDIO_FOCUS_CHANGE,
             EVENT_PLAYBACK_RATE_CHANGE,
             EVENT_BANDWIDTH,
+            EVENT_DRM_KEYS_ACQUIRED,
     })
     @interface VideoEvents {
     }
@@ -190,6 +193,13 @@ class VideoEventEmitter {
         event.putDouble(EVENT_PROP_CURRENT_TIME, currentPosition / 1000D);
         event.putDouble(EVENT_PROP_SEEK_TIME, seekTime / 1000D);
         receiveEvent(EVENT_SEEK, event);
+    }
+
+    void drmKeysAcquired(String contentId, String keyId) {
+        WritableMap event = Arguments.createMap();
+        event.putString("contentId", contentId);
+        event.putString("keyId", keyId);
+        receiveEvent(EVENT_DRM_KEYS_ACQUIRED, event);
     }
 
     void ready() {

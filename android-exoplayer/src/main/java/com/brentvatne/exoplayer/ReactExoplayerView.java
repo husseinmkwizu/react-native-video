@@ -485,7 +485,7 @@ class ReactExoplayerView extends FrameLayout implements
 //                buildHttpDataSourceFactory(false));
 
         WidevineMediaDrmCallback drmCallback = new WidevineMediaDrmCallback(licenseUrl,
-                buildHttpDataSourceFactory(false),this.srcUri,this.azamToken,this.drmAuthTokenURL);
+                buildHttpDataSourceFactory(false),this.srcUri,this.azamToken,this.drmAuthTokenURL,this.eventEmitter);
 
         if (keyRequestPropertiesArray != null) {
             for (int i = 0; i < keyRequestPropertiesArray.length - 1; i += 2) {

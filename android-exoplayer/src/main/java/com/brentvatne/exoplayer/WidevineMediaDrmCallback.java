@@ -71,6 +71,7 @@ public final class WidevineMediaDrmCallback implements MediaDrmCallback {
     private String azamToken = null;
     private String drmAuthTokenURL = null;
     private Uri srcUri;
+    private VideoEventEmitter eventEmitter;
 
     /**
      * @param defaultLicenseUrl The default license URL. Used for key requests that do not specify
@@ -87,6 +88,15 @@ public final class WidevineMediaDrmCallback implements MediaDrmCallback {
         this.azamToken = azamToken;
         this.drmAuthTokenURL = drmAuthTokenURL;
         this.srcUri = srcUri;
+    }
+
+    public WidevineMediaDrmCallback(String defaultLicenseUrl, HttpDataSource.Factory dataSourceFactory, Uri srcUri, String azamToken, String drmAuthTokenURL, VideoEventEmitter eventEmitter) {
+        this(defaultLicenseUrl, false, dataSourceFactory);
+
+        this.azamToken = azamToken;
+        this.drmAuthTokenURL = drmAuthTokenURL;
+        this.srcUri = srcUri;
+        this.eventEmitter = eventEmitter;
     }
 
     /**
@@ -181,6 +191,8 @@ public final class WidevineMediaDrmCallback implements MediaDrmCallback {
         String schemeStr = Util.fromUtf8Bytes(scheme.data);
         String[] parts = schemeStr.split("\n");
         String contentId = parts[parts.length - 1];
+
+        eventEmitter.drmKeysAcquired(contentId,"");
 
         //------ fetch Nagra token
         Map<String, String> params = new HashMap<>();
