@@ -250,6 +250,12 @@ export default class Video extends Component {
       }
     }
   }
+
+  _onDRMKeysAcquired = (event) => {
+    if (this.props.drm && this.props.drm.onDRMKeysAcquired instanceof Function) {
+      this.props.drm.onDRMKeysAcquired(event.nativeEvent);
+    }
+  }
   getViewManagerConfig = viewManagerName => {
     if (!NativeModules.UIManager.getViewManagerConfig) {
       return NativeModules.UIManager[viewManagerName];
@@ -323,6 +329,7 @@ export default class Video extends Component {
       onAudioFocusChanged: this._onAudioFocusChanged,
       onAudioBecomingNoisy: this._onAudioBecomingNoisy,
       onGetLicense: nativeProps.drm && nativeProps.drm.getLicense && this._onGetLicense,
+      onDRMKeysAcquired: this._onDRMKeysAcquired,
       onPictureInPictureStatusChanged: this._onPictureInPictureStatusChanged,
       onRestoreUserInterfaceForPictureInPictureStop: this._onRestoreUserInterfaceForPictureInPictureStop,
     });

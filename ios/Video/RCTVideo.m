@@ -1775,8 +1775,10 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
                                     NSError *err = nil;
                                     NSDictionary *jsonDict = [NSJSONSerialization JSONObjectWithData:contentIdData options:NSJSONReadingAllowFragments error:&err];
                                     NSString *contentIDForAuth = @"";
+                                    NSString *keyID = @"";
                                     if (jsonDict != nil) {
                                         contentIDForAuth = [jsonDict objectForKey:@"ContentId"];
+                                        keyID = [jsonDict objectForKey:@"KeyId"];
                                     }
                                     
                                     [self performAuthTokenRequestWithContentId:contentIDForAuth completion:^(NSString *token, NSError *error) {
@@ -1798,6 +1800,14 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
                                             if (ckcData != nil) {
                                                 [dataRequest respondWithData:ckcData];
                                                 [loadingRequest finishLoading];
+                                                
+                                                //drm license acquired succesfully
+                                                if (self.onDRMKeysAcquired) {
+                                                    self.onDRMKeysAcquired(@{
+                                                        @"contentId": contentIDForAuth,
+                                                        @"keyId": keyID,
+                                                        @"target": self.reactTag});
+                                                }
                                             }
                                             else{
                                                 NSError *licenseError = [NSError errorWithDomain: @"RCTVideo"
