@@ -193,7 +193,7 @@ public final class WidevineMediaDrmCallback implements MediaDrmCallback {
         String contentId = parts[parts.length - 1];
 
         String pssh = Base64.encodeToString(scheme.data, Base64.NO_WRAP);
-        eventEmitter.drmKeysAcquired(contentId, pssh);
+//        eventEmitter.drmKeysAcquired(contentId, pssh);
 
         //------ fetch Nagra token
         Map<String, String> params = new HashMap<>();
@@ -221,7 +221,12 @@ public final class WidevineMediaDrmCallback implements MediaDrmCallback {
         }
 
 
-        return executePost(dataSourceFactory, url, request.getData(), requestProperties);
+//        return executePost(dataSourceFactory, url, request.getData(), requestProperties);
+        byte[] responseData = executePost(dataSourceFactory, url, request.getData(), requestProperties);
+        if(responseData != null){
+            eventEmitter.drmKeysAcquired(contentId, pssh);
+        }
+        return  responseData;
     }
 
     private static byte[] executePost(
