@@ -192,7 +192,8 @@ public final class WidevineMediaDrmCallback implements MediaDrmCallback {
         String[] parts = schemeStr.split("\n");
         String contentId = parts[parts.length - 1];
 
-        eventEmitter.drmKeysAcquired(contentId,"");
+        String pssh = Base64.encodeToString(scheme.data, Base64.NO_WRAP);
+        eventEmitter.drmKeysAcquired(contentId, pssh);
 
         //------ fetch Nagra token
         Map<String, String> params = new HashMap<>();
