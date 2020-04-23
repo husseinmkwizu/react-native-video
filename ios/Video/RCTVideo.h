@@ -46,15 +46,20 @@
 @property (nonatomic, copy) RCTDirectEventBlock onDRMKeysAcquired;
 
 typedef NS_ENUM(NSInteger, RCTVideoError) {
-    RCTVideoErrorFromJSPart,
-    RCTVideoErrorLicenseRequestNotOk,
-    RCTVideoErrorNoDataFromLicenseRequest,
-    RCTVideoErrorNoSPC,
-    RCTVideoErrorNoDataRequest,
-    RCTVideoErrorNoCertificateData,
-    RCTVideoErrorNoCertificateURL,
-    RCTVideoErrorNoFairplayDRM,
-    RCTVideoErrorNoDRMData
+    RCTVideoErrorFromJSPart = 2001,
+    RCTVideoErrorLicenseRequestNotOk = 2002,
+    RCTVideoErrorNoDataFromLicenseRequest = 2003,
+    RCTVideoErrorNoSPC = 2004,
+    RCTVideoErrorNoDataRequest = 2005,
+    RCTVideoErrorNoCertificateData = 2006,
+    RCTVideoErrorNoCertificateURL = 2007,
+    RCTVideoErrorNoFairplayDRM = 2008,
+    RCTVideoErrorNoDRMData = 2009,
+    
+    //---- extra errors
+    RCTVideo_ERROR_UNKNOWN = 1001,
+    RCTVideo_ERROR_DRM_AUTH_TOKEN_FAILED = 1008,
+    RCTVideo_ERROR_DRM_LICENSE_KEY_FAILED = 1009,
 };
 
 - (instancetype)initWithEventDispatcher:(RCTEventDispatcher *)eventDispatcher NS_DESIGNATED_INITIALIZER;

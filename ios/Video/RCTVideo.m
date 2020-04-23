@@ -1811,7 +1811,7 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
                                             }
                                             else{
                                                 NSError *licenseError = [NSError errorWithDomain: @"RCTVideo"
-                                                                                            code: RCTVideoErrorNoDataFromLicenseRequest
+                                                                                            code: RCTVideo_ERROR_DRM_LICENSE_KEY_FAILED
                                                                                         userInfo: @{
                                                                                             NSLocalizedDescriptionKey: @"Error obtaining DRM license.",
                                                                                             NSLocalizedFailureReasonErrorKey: @"No data received from the license server.",
@@ -2024,7 +2024,7 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
                 
                 NSLog(@"Error getting license from %@, HTTP status code %li", url, (long)[httpResponse statusCode]);
                 NSError *licenseError = [NSError errorWithDomain: @"RCTVideo"
-                                                            code: RCTVideoErrorLicenseRequestNotOk
+                                                            code: RCTVideo_ERROR_DRM_LICENSE_KEY_FAILED
                                                         userInfo: @{
                                                             NSLocalizedDescriptionKey: @"Error obtaining license.",
                                                             NSLocalizedFailureReasonErrorKey: [NSString stringWithFormat:@"License server responded with status code %li", (long)[httpResponse statusCode]],
@@ -2053,7 +2053,7 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
                 
             } else {
                 NSError *licenseError = [NSError errorWithDomain: @"RCTVideo"
-                                                            code: RCTVideoErrorNoDataFromLicenseRequest
+                                                            code: RCTVideo_ERROR_DRM_LICENSE_KEY_FAILED
                                                         userInfo: @{
                                                             NSLocalizedDescriptionKey: @"Error obtaining DRM license.",
                                                             NSLocalizedFailureReasonErrorKey: @"No data received from the license server.",
