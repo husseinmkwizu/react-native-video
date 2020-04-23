@@ -424,7 +424,7 @@ class ReactExoplayerView extends FrameLayout implements
                             int errorStringId = Util.SDK_INT < 18 ? R.string.error_drm_not_supported
                                     : (e.reason == UnsupportedDrmException.REASON_UNSUPPORTED_SCHEME
                                     ? R.string.error_drm_unsupported_scheme : R.string.error_drm_unknown);
-                            eventEmitter.error(getResources().getString(errorStringId), e);
+                            eventEmitter.error(getResources().getString(errorStringId), Errors.ERROR_DRM_UNSUPPORTED_DRM, e);
                             return;
                         }
                     }
@@ -1099,6 +1099,7 @@ class ReactExoplayerView extends FrameLayout implements
     @Override
     public void onPlayerError(ExoPlaybackException e) {
         String errorString = null;
+        int errorCode = 0;
         Exception ex = e;
         if (e.type == ExoPlaybackException.TYPE_RENDERER) {
             Exception cause = e.getRendererException();
@@ -1109,25 +1110,35 @@ class ReactExoplayerView extends FrameLayout implements
                 if (decoderInitializationException.decoderName == null) {
                     if (decoderInitializationException.getCause() instanceof MediaCodecUtil.DecoderQueryException) {
                         errorString = getResources().getString(R.string.error_querying_decoders);
+                        errorCode = Errors.ERROR_QUERYING_DECODERS;
                     } else if (decoderInitializationException.secureDecoderRequired) {
                         errorString = getResources().getString(R.string.error_no_secure_decoder,
                                 decoderInitializationException.mimeType);
+                        errorCode = Errors.ERROR_NO_SECURE_DECODER;
                     } else {
                         errorString = getResources().getString(R.string.error_no_decoder,
                                 decoderInitializationException.mimeType);
+                        errorCode = Errors.ERROR_NO_DECODER;
                     }
                 } else {
                     errorString = getResources().getString(R.string.error_instantiating_decoder,
                             decoderInitializationException.decoderName);
+                    errorCode = Errors.ERROR_INSTANTIATING_DECODER;
                 }
             }
         } else if (e.type == ExoPlaybackException.TYPE_SOURCE) {
             ex = e.getSourceException();
             errorString = getResources().getString(R.string.unrecognized_media_format);
+            errorCode = Errors.ERROR_UNRECOGNIZED_MEDIA_FORMAT;
         }
+
         if (errorString != null) {
-            eventEmitter.error(errorString, ex);
+            eventEmitter.error(errorString, errorCode, ex);
         }
+//        else{
+//            eventEmitter.error("Unknown error", Errors.ERROR_UNKNOWN, ex);
+//        }
+
         playerNeedsSource = true;
         if (isBehindLiveWindow(e)) {
             clearResumePosition();
@@ -1521,7 +1532,7 @@ class ReactExoplayerView extends FrameLayout implements
     @Override
     public void onDrmSessionManagerError(Exception e) {
         Log.d("DRM Info", "onDrmSessionManagerError");
-        eventEmitter.error("onDrmSessionManagerError", e);
+        eventEmitter.error("onDrmSessionManagerError", Errors.ERROR_DRM_SESSION_MANAGER_ERROR, e);
     }
 
     @Override

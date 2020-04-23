@@ -126,6 +126,7 @@ class VideoEventEmitter {
 
     private static final String EVENT_PROP_ERROR = "error";
     private static final String EVENT_PROP_ERROR_STRING = "errorString";
+    private static final String EVENT_PROP_ERROR_CODE = "errorCode";
     private static final String EVENT_PROP_ERROR_EXCEPTION = "errorException";
 
     private static final String EVENT_PROP_TIMED_METADATA = "metadata";
@@ -239,6 +240,16 @@ class VideoEventEmitter {
     void error(String errorString, Exception exception) {
         WritableMap error = Arguments.createMap();
         error.putString(EVENT_PROP_ERROR_STRING, errorString);
+        error.putString(EVENT_PROP_ERROR_EXCEPTION, exception.getMessage());
+        WritableMap event = Arguments.createMap();
+        event.putMap(EVENT_PROP_ERROR, error);
+        receiveEvent(EVENT_ERROR, event);
+    }
+
+    void error(String errorString, int errorCode, Exception exception) {
+        WritableMap error = Arguments.createMap();
+        error.putString(EVENT_PROP_ERROR_STRING, errorString);
+        error.putInt(EVENT_PROP_ERROR_CODE, errorCode);
         error.putString(EVENT_PROP_ERROR_EXCEPTION, exception.getMessage());
         WritableMap event = Arguments.createMap();
         event.putMap(EVENT_PROP_ERROR, error);
