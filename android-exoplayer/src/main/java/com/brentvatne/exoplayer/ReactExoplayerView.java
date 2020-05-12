@@ -103,6 +103,11 @@ import org.json.JSONObject;
 
 import android.os.StrictMode;
 
+import com.nexguard.quickmark.ErrorID;
+import com.nexguard.quickmark.MessageListener;
+import com.nexguard.quickmark.QuickMarkView;
+import com.nexguard.quickmark.ErrorListener;
+
 
 @SuppressLint("ViewConstructor")
 class ReactExoplayerView extends FrameLayout implements
@@ -138,6 +143,7 @@ class ReactExoplayerView extends FrameLayout implements
 
     private DataSource.Factory mediaDataSourceFactory;
     private SimpleExoPlayer player;
+    private QuickMarkView quickMarkView;
     private DefaultTrackSelector trackSelector;
     private boolean playerNeedsSource;
 
