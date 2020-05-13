@@ -54,6 +54,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.InputStream;
+import com.nexguard.quickmark.QuickMarkView;
 
 /**
  * A {@link MediaDrmCallback} that makes requests using {@link HttpDataSource} instances.
@@ -72,6 +73,7 @@ public final class WidevineMediaDrmCallback implements MediaDrmCallback {
     private String drmAuthTokenURL = null;
     private Uri srcUri;
     private VideoEventEmitter eventEmitter;
+    private QuickMarkView quickMarkView = null;
 
     /**
      * @param defaultLicenseUrl The default license URL. Used for key requests that do not specify
@@ -97,6 +99,16 @@ public final class WidevineMediaDrmCallback implements MediaDrmCallback {
         this.drmAuthTokenURL = drmAuthTokenURL;
         this.srcUri = srcUri;
         this.eventEmitter = eventEmitter;
+    }
+
+    public WidevineMediaDrmCallback(String defaultLicenseUrl, HttpDataSource.Factory dataSourceFactory, Uri srcUri, String azamToken, String drmAuthTokenURL, VideoEventEmitter eventEmitter, QuickMarkView quickMarkView) {
+        this(defaultLicenseUrl, false, dataSourceFactory);
+
+        this.azamToken = azamToken;
+        this.drmAuthTokenURL = drmAuthTokenURL;
+        this.srcUri = srcUri;
+        this.eventEmitter = eventEmitter;
+        this.quickMarkView = quickMarkView;
     }
 
     /**
@@ -211,6 +223,12 @@ public final class WidevineMediaDrmCallback implements MediaDrmCallback {
 
                     if (!dataObj.isNull("token")) {
                         String token = dataObj.getString("token");
+
+                        //set token on watermark view, if available
+                        if (this.quickMarkView != null){
+                            this.quickMarkView.setToken(token);
+                        }
+
                         requestProperties.put("nv-authorizations", token);
                     }
                 }

@@ -117,6 +117,8 @@ class ReactExoplayerView extends FrameLayout implements
         BecomingNoisyListener,
         AudioManager.OnAudioFocusChangeListener,
         MetadataOutput,
+        ErrorListener,
+        MessageListener,
         DefaultDrmSessionEventListener {
 
     private static final String TAG = "ReactExoplayerView";
@@ -143,7 +145,7 @@ class ReactExoplayerView extends FrameLayout implements
 
     private DataSource.Factory mediaDataSourceFactory;
     private SimpleExoPlayer player;
-    private QuickMarkView quickMarkView;
+    private QuickMarkView quickMarkView = null;
     private DefaultTrackSelector trackSelector;
     private boolean playerNeedsSource;
 
@@ -190,6 +192,9 @@ class ReactExoplayerView extends FrameLayout implements
     private boolean drmLicenseShouldPersist = false;
     private String azamToken = null;
     private String drmAuthTokenURL = null;
+    private String watermarkServiceURL = null;
+    private boolean watermarkEnabled = false;
+    private String nagraTenantID = null;
     private boolean controls;
     // \ End props
 
@@ -253,6 +258,17 @@ class ReactExoplayerView extends FrameLayout implements
         exoPlayerView.setLayoutParams(layoutParams);
 
         addView(exoPlayerView, 0, layoutParams);
+
+        //watermarking
+        quickMarkView = new QuickMarkView(getContext(), "wofDlXo9wo4eU8K+wqY=");
+        quickMarkView.setLayoutParams(layoutParams);
+        addView(quickMarkView, layoutParams);
+
+        quickMarkView.addOnErrorListener(this);
+        quickMarkView.addOnMessageListener(this);
+
+        quickMarkView.setToken("40001234");
+        quickMarkView.setApiKey("x6q1Q4voDp6yN0dzFEQMy8Epl6SMh1Tb6GKqS5bL");
 
         mainHandler = new Handler();
     }
@@ -408,6 +424,15 @@ class ReactExoplayerView extends FrameLayout implements
                     DefaultRenderersFactory renderersFactory =
                             new DefaultRenderersFactory(getContext())
                                     .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF);
+
+                    // Watermark
+                    if(self.watermarkEnabled){
+                        self.quickMarkView.setURL(self.watermarkServiceURL);
+                        self.quickMarkView.setTenant(self.nagraTenantID);
+                    }else{
+                        self.quickMarkView = null;
+                    }
+
                     // DRM
                     DrmSessionManager<FrameworkMediaCrypto> drmSessionManager = null;
                     if (self.drmUUID != null) {
@@ -491,7 +516,7 @@ class ReactExoplayerView extends FrameLayout implements
 //                buildHttpDataSourceFactory(false));
 
         WidevineMediaDrmCallback drmCallback = new WidevineMediaDrmCallback(licenseUrl,
-                buildHttpDataSourceFactory(false),this.srcUri,this.azamToken,this.drmAuthTokenURL,this.eventEmitter);
+                buildHttpDataSourceFactory(false),this.srcUri,this.azamToken,this.drmAuthTokenURL,this.eventEmitter,this.quickMarkView);
 
         if (keyRequestPropertiesArray != null) {
             for (int i = 0; i < keyRequestPropertiesArray.length - 1; i += 2) {
@@ -745,6 +770,8 @@ class ReactExoplayerView extends FrameLayout implements
         themedReactContext.removeLifecycleEventListener(this);
         audioBecomingNoisyReceiver.removeListener();
         bandwidthMeter.removeEventListener(this);
+
+        quickMarkView = null;
     }
 
     private boolean requestAudioFocus() {
@@ -817,6 +844,7 @@ class ReactExoplayerView extends FrameLayout implements
         }
         setKeepScreenOn(false);
         audioManager.abandonAudioFocus(this);
+        stopWatermark(quickMarkView);
     }
 
     private void updateResumePosition() {
@@ -901,6 +929,16 @@ class ReactExoplayerView extends FrameLayout implements
     @Override
     public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
         String text = "onStateChanged: playWhenReady=" + playWhenReady + ", playbackState=";
+
+        // Watermarking start and stop
+        if (playWhenReady) {
+            if (playbackState == Player.STATE_READY){
+                startWatermark(quickMarkView);
+            }
+        }
+        else {
+            stopWatermark(quickMarkView);
+        }
 
         //handle keepscreen on if video playing
         // STATE_IDLE, STATE_ENDED or paused
@@ -1530,6 +1568,19 @@ class ReactExoplayerView extends FrameLayout implements
         this.azamToken = azToken;
     }
 
+    public void setWatermarkServiceURL(String srvUrl) {
+        this.watermarkServiceURL = srvUrl;
+    }
+
+    public void setWatermarkEnabled(boolean flag) {
+        this.watermarkEnabled = flag;
+    }
+
+    public void setNagraTenantID(String tenantID) {
+        this.nagraTenantID = tenantID;
+    }
+
+
     @Override
     public void onDrmKeysLoaded() {
         Log.d("DRM Info", "onDrmKeysLoaded");
@@ -1595,5 +1646,28 @@ class ReactExoplayerView extends FrameLayout implements
                 urlConnection.disconnect();
             }
         }
+    }
+
+    private void startWatermark(QuickMarkView vw) {
+        if(vw != null && this.watermarkEnabled){
+            Log.d(TAG,"start Watermark=======");
+            vw.startWatermark();
+        }
+    }
+
+    private void stopWatermark(QuickMarkView vw) {
+        if(vw != null && this.watermarkEnabled){
+            Log.d(TAG,"stop Watermark=======");
+            vw.stopWatermark();
+        }
+    }
+
+    // Watermarking listeners
+    public void onQuickMarkError(QuickMarkView emitter, ErrorID errorCode, String errorMessage) {
+        Log.d(TAG, "Watermark, Received error \""+errorMessage+"\""+"  , errorID"+errorCode.toString());
+    }
+
+    public void onQuickMarkMessage(QuickMarkView emitter, String statusMessage) {
+        Log.d(TAG, "Watermark, Received message \""+statusMessage+"\"");
     }
 }

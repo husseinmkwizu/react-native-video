@@ -72,6 +72,9 @@ public class ReactExoplayerViewManager extends ViewGroupManager<ReactExoplayerVi
     private static final String PROP_SELECTED_VIDEO_TRACK_VALUE = "value";
     private static final String PROP_HIDE_SHUTTER_VIEW = "hideShutterView";
     private static final String PROP_CONTROLS = "controls";
+    private static final String PROP_WATERMARK_SERVICE_URL = "watermarkServiceURL";
+    private static final String PROP_WATERMARK_ENABLED = "watermarkEnabled";
+    private static final String PROP_NAGRA_TENANT_ID = "nagraTenantID";
 
     private ReactExoplayerConfig config;
 
@@ -316,6 +319,21 @@ public class ReactExoplayerViewManager extends ViewGroupManager<ReactExoplayerVi
     @ReactProp(name = PROP_CONTROLS, defaultBoolean = false)
     public void setControls(final ReactExoplayerView videoView, final boolean controls) {
         videoView.setControls(controls);
+    }
+
+    @ReactProp(name = PROP_WATERMARK_SERVICE_URL)
+    public void setWatermarkServiceURL(final ReactExoplayerView videoView, final String srvUrl) {
+        videoView.setWatermarkServiceURL(srvUrl);
+    }
+
+    @ReactProp(name = PROP_WATERMARK_ENABLED, defaultBoolean = false)
+    public void setWatermarkEnabled(final ReactExoplayerView videoView, final boolean enabled) {
+        videoView.setWatermarkEnabled(enabled);
+    }
+
+    @ReactProp(name = PROP_NAGRA_TENANT_ID)
+    public void setNagraTenantId(final ReactExoplayerView videoView, final String tenantID) {
+        videoView.setNagraTenantID(tenantID);
     }
 
     @ReactProp(name = PROP_BUFFER_CONFIG)
