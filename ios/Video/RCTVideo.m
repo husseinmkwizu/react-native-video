@@ -7,6 +7,8 @@
 #include <AVFoundation/AVFoundation.h>
 #import "KeychainHelper.h"
 
+#import <QuickMark/QuickMark.h>
+
 static NSString *const statusKeyPath = @"status";
 static NSString *const playbackLikelyToKeepUpKeyPath = @"playbackLikelyToKeepUp";
 static NSString *const playbackBufferEmptyKeyPath = @"playbackBufferEmpty";
@@ -26,6 +28,7 @@ static int const RCTVideoUnset = -1;
 @implementation RCTVideo
 {
     AVPlayer *_player;
+    QuickMarkView *_quickMarkView;
     AVPlayerItem *_playerItem;
     NSDictionary *_source;
     BOOL _playerItemObserversSet;

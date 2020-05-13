@@ -14,6 +14,8 @@ Pod::Spec.new do |s|
 
   s.ios.deployment_target = "8.0"
   s.tvos.deployment_target = "9.0"
+  
+  s.vendored_frameworks = 'ios/Libs/QuickMark.framework'
 
   s.subspec "Video" do |ss|
     ss.source_files  = "ios/Video/*.{h,m}"

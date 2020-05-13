@@ -1,0 +1,6 @@
+framework module QuickMark {
+  umbrella header "QuickMark.h"
+
+  export *
+  module * { export * }
+}
