@@ -84,6 +84,11 @@ static int const RCTVideoUnset = -1;
     BOOL _fullscreenPlayerPresented;
     NSString *_filterName;
     BOOL _filterEnabled;
+    
+    BOOL _watermarkEnabled;
+    NSString *_watermarkServiceURL;
+    NSString *_nagraTenantID;
+    
     UIViewController * _presentingViewController;
 #if __has_include(<react-native-video/RCTVideoCache.h>)
     RCTVideoCache * _videoCache;
@@ -118,6 +123,11 @@ static int const RCTVideoUnset = -1;
         _playWhenInactive = false;
         _pictureInPicture = false;
         _ignoreSilentSwitch = @"inherit"; // inherit, ignore, obey
+        
+        _watermarkEnabled = false;
+        _watermarkServiceURL = nil;
+        _nagraTenantID = nil;
+        
 #if TARGET_OS_IOS
         _restoreUserInterfaceForPIPStopCompletionHandler = NULL;
 #endif
@@ -286,7 +296,7 @@ static int const RCTVideoUnset = -1;
             @"atTimescale": [NSNumber numberWithInt:currentTime.timescale],
             @"target": self.reactTag,
             @"seekableDuration": [self calculateSeekableDuration],
-        });
+                             });
     }
 }
 
@@ -390,6 +400,8 @@ static int const RCTVideoUnset = -1;
                 [self setAutomaticallyWaitsToMinimizeStalling:_automaticallyWaitsToMinimizeStalling];
             }
             
+            [self configureQuickMarkView];
+            
             //Perform on next run loop, otherwise onVideoLoadStart is nil
             if (self.onVideoLoadStart) {
                 id uri = [self->_source objectForKey:@"uri"];
@@ -400,7 +412,7 @@ static int const RCTVideoUnset = -1;
                                                 @"isNetwork": [NSNumber numberWithBool:(bool)[self->_source objectForKey:@"isNetwork"]]},
                                         @"drm": self->_drm ? self->_drm : [NSNull null],
                                         @"target": self.reactTag
-                });
+                                      });
             }
         }];
     });
@@ -630,7 +642,7 @@ static int const RCTVideoUnset = -1;
                 self.onTimedMetadata(@{
                     @"target": self.reactTag,
                     @"metadata": array
-                });
+                                     });
             }
         }
         
@@ -1334,6 +1346,18 @@ static int const RCTVideoUnset = -1;
     }
 }
 
+- (void)setWatermarkEnabled:(BOOL)enabled {
+    _watermarkEnabled = enabled;
+}
+
+- (void)setWatermarkServiceURL:(NSString *)url {
+    _watermarkServiceURL = url;
+}
+
+- (void)setNagraTenantID:(NSString *)tenantId {
+    _nagraTenantID = tenantId;
+}
+
 - (void)usePlayerViewController
 {
     if( _player )
@@ -1341,6 +1365,8 @@ static int const RCTVideoUnset = -1;
         if (!_playerViewController) {
             _playerViewController = [self createPlayerViewController:_player withPlayerItem:_playerItem];
         }
+        
+        
         // to prevent video from being animated when resizeMode is 'cover'
         // resize mode must be set before subview is added
         [self setResizeMode:_resizeMode];
@@ -1373,6 +1399,9 @@ static int const RCTVideoUnset = -1;
         
         [self.layer addSublayer:_playerLayer];
         self.layer.needsDisplayOnBoundsChange = YES;
+        
+        //        [self configureQuickMarkView];
+        
 #if TARGET_OS_IOS
         [self setupPipController];
 #endif
@@ -1538,6 +1567,8 @@ static int const RCTVideoUnset = -1;
 
 - (void)removeFromSuperview
 {
+    //    [self stopWatermark];
+    
     [_player pause];
     if (_playbackRateObserverRegistered) {
         [_player removeObserver:self forKeyPath:playbackRate context:nil];
@@ -1784,6 +1815,7 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
                                         keyID = [jsonDict objectForKey:@"KeyId"];
                                     }
                                     
+                                    RCTVideo *selfRef = self;
                                     [self performAuthTokenRequestWithContentId:contentIDForAuth completion:^(NSString *token, NSError *error) {
                                         
                                         if (error != nil) {
@@ -1791,7 +1823,11 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
                                             self->_requestingCertificateErrored = YES;
                                         }
                                         
-                                        
+                                        //set token to watermark
+                                        if (token != nil) {
+                                            [selfRef loadQuickMarkViewWithUrl:_watermarkServiceURL token:token tenant:_nagraTenantID];
+                                        }
+                                                                           
                                         [self performContentKeyRequestWithContentURL:url spc:spcData authToken:token completion:^(NSData *ckcData, NSError *error) {
                                             
                                             if (error != nil) {
@@ -2081,7 +2117,7 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
     if (self.onPictureInPictureStatusChanged) {
         self.onPictureInPictureStatusChanged(@{
             @"isActive": [NSNumber numberWithBool:false]
-        });
+                                             });
     }
 }
 
@@ -2089,7 +2125,7 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
     if (self.onPictureInPictureStatusChanged) {
         self.onPictureInPictureStatusChanged(@{
             @"isActive": [NSNumber numberWithBool:true]
-        });
+                                             });
     }
 }
 
@@ -2113,5 +2149,75 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
     _restoreUserInterfaceForPIPStopCompletionHandler = completionHandler;
 }
 #endif
+
+
+#pragma mark - QuickMark
+
+-(void)configureQuickMarkView{
+    
+    if (_quickMarkView != nil) {
+        return;
+    }
+    
+    //enable logging
+    //    [QuickMarkView enableLogWithEnable:true];
+    
+    // We create a container to embed the quickMarkView and add a response buffer HMAC secret
+    self->_quickMarkView = [[QuickMarkView alloc] initWithFrame:self.bounds andSecret:@"wofDlXo9wo4eU8K+wqY="];
+    [self addSubview:_quickMarkView];
+    
+    _quickMarkView.translatesAutoresizingMaskIntoConstraints = false;
+    
+    NSLayoutConstraint *topConstraint = [NSLayoutConstraint constraintWithItem:_quickMarkView attribute:NSLayoutAttributeTop relatedBy:NSLayoutRelationEqual toItem:self attribute:NSLayoutAttributeTop multiplier:1 constant: 0];
+    NSLayoutConstraint *rightConstraint = [NSLayoutConstraint constraintWithItem:_quickMarkView attribute:NSLayoutAttributeRight relatedBy:NSLayoutRelationEqual toItem:self attribute:NSLayoutAttributeRight multiplier:1 constant:0];
+    
+    NSLayoutConstraint *bottomConstraint = [NSLayoutConstraint constraintWithItem:_quickMarkView attribute:NSLayoutAttributeBottom relatedBy:NSLayoutRelationEqual toItem:self attribute:NSLayoutAttributeBottom multiplier:1 constant: 0];
+    NSLayoutConstraint *leftConstraint = [NSLayoutConstraint constraintWithItem:_quickMarkView attribute:NSLayoutAttributeLeft relatedBy:NSLayoutRelationEqual toItem:self attribute:NSLayoutAttributeLeft multiplier:1 constant:0];
+    
+    
+    // Add constraints
+    [self addConstraints:@[topConstraint, rightConstraint, bottomConstraint, leftConstraint]];
+    _quickMarkView.quickMarkViewDelegate = self;
+    //    [_quickMarkView loadQuickMarkViewWithUrl:_watermarkServiceURL :@"40000000" :_nagraTenantID];
+    //    [_quickMarkView setApiKey:@"x6q1Q4voDp6yN0dzFEQMy8Epl6SMh1Tb6GKqS5bL"];
+    //    [self startWatermark];
+}
+
+- (void) loadQuickMarkViewWithUrl:(NSString * )url  token:(NSString * )token tenant:(NSString *)tenant{
+    if (_quickMarkView != nil && _watermarkEnabled) {
+        [_quickMarkView loadQuickMarkViewWithUrl:url :token :tenant];
+        [_quickMarkView startWatermark];
+    }
+}
+
+-(void) startWatermark {
+    if (_quickMarkView != nil && _watermarkEnabled) {
+        [_quickMarkView startWatermark];
+    }
+}
+
+-(void) stopWatermark {
+    if (_quickMarkView != nil) {
+        [_quickMarkView stopWatermark];
+    }
+}
+
+-(void) destroyWatermark {
+    if (_quickMarkView != nil) {
+        [_quickMarkView stopLoading];
+        [_quickMarkView stopWatermark];
+        _quickMarkView.quickMarkViewDelegate = nil;
+        _quickMarkView = nil;
+    }
+}
+
+-(void)didReceiveMessage:(QuickMarkView *)sender :(NSString *)message{
+    
+    NSLog(@"Watermark, Received message: %@",message);
+}
+-(void)didReceiveError:(QuickMarkView *)sender :(QMErrorId)errorId :(NSString *)message{
+    NSLog(@"Watermark, Received message: %@, error: %d",message,errorId);
+}
+
 
 @end

@@ -10,7 +10,7 @@ RCT_EXPORT_MODULE();
 
 - (UIView *)view
 {
-  return [[RCTVideo alloc] initWithEventDispatcher:self.bridge.eventDispatcher];
+    return [[RCTVideo alloc] initWithEventDispatcher:self.bridge.eventDispatcher];
 }
 
 - (dispatch_queue_t)methodQueue
@@ -46,6 +46,11 @@ RCT_EXPORT_VIEW_PROPERTY(filter, NSString);
 RCT_EXPORT_VIEW_PROPERTY(filterEnabled, BOOL);
 RCT_EXPORT_VIEW_PROPERTY(progressUpdateInterval, float);
 RCT_EXPORT_VIEW_PROPERTY(restoreUserInterfaceForPIPStopCompletionHandler, BOOL);
+
+RCT_EXPORT_VIEW_PROPERTY(watermarkEnabled, BOOL);
+RCT_EXPORT_VIEW_PROPERTY(watermarkServiceURL, NSString);
+RCT_EXPORT_VIEW_PROPERTY(nagraTenantID, NSString);
+
 /* Should support: onLoadStart, onLoad, and onError to stay consistent with Image */
 RCT_EXPORT_VIEW_PROPERTY(onVideoLoadStart, RCTDirectEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onVideoLoad, RCTDirectEventBlock);
@@ -69,10 +74,10 @@ RCT_EXPORT_VIEW_PROPERTY(onVideoExternalPlaybackChange, RCTDirectEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onGetLicense, RCTDirectEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onDRMKeysAcquired, RCTDirectEventBlock);
 RCT_REMAP_METHOD(save,
-        options:(NSDictionary *)options
-        reactTag:(nonnull NSNumber *)reactTag
-        resolver:(RCTPromiseResolveBlock)resolve
-        rejecter:(RCTPromiseRejectBlock)reject)
+                 options:(NSDictionary *)options
+                 reactTag:(nonnull NSNumber *)reactTag
+                 resolver:(RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject)
 {
     [self.bridge.uiManager prependUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, RCTVideo *> *viewRegistry) {
         RCTVideo *view = viewRegistry[reactTag];
@@ -84,8 +89,8 @@ RCT_REMAP_METHOD(save,
     }];
 };
 RCT_REMAP_METHOD(setLicenseResult,
-         license:(NSString *)license
-         reactTag:(nonnull NSNumber *)reactTag)
+                 license:(NSString *)license
+                 reactTag:(nonnull NSNumber *)reactTag)
 {
     [self.bridge.uiManager prependUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, RCTVideo *> *viewRegistry) {
         RCTVideo *view = viewRegistry[reactTag];
@@ -115,12 +120,12 @@ RCT_EXPORT_VIEW_PROPERTY(onRestoreUserInterfaceForPictureInPictureStop, RCTDirec
 
 - (NSDictionary *)constantsToExport
 {
-  return @{
-    @"ScaleNone": AVLayerVideoGravityResizeAspect,
-    @"ScaleToFill": AVLayerVideoGravityResize,
-    @"ScaleAspectFit": AVLayerVideoGravityResizeAspect,
-    @"ScaleAspectFill": AVLayerVideoGravityResizeAspectFill
-  };
+    return @{
+        @"ScaleNone": AVLayerVideoGravityResizeAspect,
+        @"ScaleToFill": AVLayerVideoGravityResize,
+        @"ScaleAspectFit": AVLayerVideoGravityResizeAspect,
+        @"ScaleAspectFill": AVLayerVideoGravityResizeAspectFill
+    };
 }
 
 + (BOOL)requiresMainQueueSetup

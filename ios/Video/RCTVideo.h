@@ -12,13 +12,15 @@
 #import <DVAssetLoaderDelegate/DVAssetLoaderDelegate.h>
 #endif
 
+@import QuickMark;
+
 @class RCTEventDispatcher;
 #if __has_include(<react-native-video/RCTVideoCache.h>)
-@interface RCTVideo : UIView <RCTVideoPlayerViewControllerDelegate, DVAssetLoaderDelegatesDelegate, AVAssetResourceLoaderDelegate>
+@interface RCTVideo : UIView <RCTVideoPlayerViewControllerDelegate, DVAssetLoaderDelegatesDelegate, AVAssetResourceLoaderDelegate, QuickMarkViewDelegate>
 #elif TARGET_OS_TV
-@interface RCTVideo : UIView <RCTVideoPlayerViewControllerDelegate, AVAssetResourceLoaderDelegate>
+@interface RCTVideo : UIView <RCTVideoPlayerViewControllerDelegate, AVAssetResourceLoaderDelegate, QuickMarkViewDelegate>
 #else
-@interface RCTVideo : UIView <RCTVideoPlayerViewControllerDelegate, AVPictureInPictureControllerDelegate, AVAssetResourceLoaderDelegate>
+@interface RCTVideo : UIView <RCTVideoPlayerViewControllerDelegate, AVPictureInPictureControllerDelegate, AVAssetResourceLoaderDelegate, QuickMarkViewDelegate>
 #endif
 
 @property (nonatomic, copy) RCTDirectEventBlock onVideoLoadStart;
