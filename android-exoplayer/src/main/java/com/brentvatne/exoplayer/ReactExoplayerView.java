@@ -191,6 +191,7 @@ class ReactExoplayerView extends FrameLayout implements
     private String[] drmLicenseHeader = null;
     private boolean drmLicenseShouldPersist = false;
     private String azamToken = null;
+    private String nagraToken = null;
     private String drmAuthTokenURL = null;
     private String watermarkServiceURL = null;
     private boolean watermarkEnabled = false;
@@ -516,7 +517,7 @@ class ReactExoplayerView extends FrameLayout implements
 //                buildHttpDataSourceFactory(false));
 
         WidevineMediaDrmCallback drmCallback = new WidevineMediaDrmCallback(licenseUrl,
-                buildHttpDataSourceFactory(false),this.srcUri,this.azamToken,this.drmAuthTokenURL,this.eventEmitter,this.quickMarkView);
+                buildHttpDataSourceFactory(false),this.srcUri,this.azamToken,this.drmAuthTokenURL,this.eventEmitter,this.quickMarkView,this.nagraToken);
 
         if (keyRequestPropertiesArray != null) {
             for (int i = 0; i < keyRequestPropertiesArray.length - 1; i += 2) {
@@ -1566,6 +1567,10 @@ class ReactExoplayerView extends FrameLayout implements
 
     public void setAzamToken(String azToken) {
         this.azamToken = azToken;
+    }
+
+    public void setNagraToken(String ngToken) {
+        this.nagraToken = ngToken;
     }
 
     public void setWatermarkServiceURL(String srvUrl) {

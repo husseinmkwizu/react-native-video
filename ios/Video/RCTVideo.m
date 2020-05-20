@@ -1959,6 +1959,13 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
     NSString *drmAuthTokenURL = (NSString *)[self->_drm objectForKey:@"drmAuthTokenURL"];
     NSString *azamToken = (NSString *)[self->_drm objectForKey:@"azamToken"];
     
+    //check if we have nagra token and return it
+    NSString *nagraToken = (NSString *)[self->_drm objectForKey:@"nagraToken"];
+    if (nagraToken != nil) {
+        completion(nagraToken,nil);
+        return;
+    }
+    
     if(drmAuthTokenURL == nil || azamToken == nil){
         NSString *errMsg = @"Missing drmAuthTokenURL or jwt token";
         NSError *error = [NSError errorWithDomain: @"RCTVideo"

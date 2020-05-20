@@ -38,6 +38,7 @@ public class ReactExoplayerViewManager extends ViewGroupManager<ReactExoplayerVi
     private static final String PROP_DRM_LICENSE_SHOULD_PERSIST = "licenseShouldPersist";
     private static final String PROP_DRM_AUTH_TOKEN_URL = "drmAuthTokenURL";
     private static final String PROP_AZAM_TOKEN = "azamToken";
+    private static final String PROP_NAGRA_TOKEN = "nagraToken";
     private static final String PROP_DRM_HEADERS = "headers";
     private static final String PROP_SRC_HEADERS = "requestHeaders";
     private static final String PROP_RESIZE_MODE = "resizeMode";
@@ -124,6 +125,7 @@ public class ReactExoplayerViewManager extends ViewGroupManager<ReactExoplayerVi
             String drmLicenseServer = drm.hasKey(PROP_DRM_LICENSESERVER) ? drm.getString(PROP_DRM_LICENSESERVER) : null;
             String drmAuthTokenURL = drm.hasKey(PROP_DRM_AUTH_TOKEN_URL) ? drm.getString(PROP_DRM_AUTH_TOKEN_URL) : null;
             String azamToken = drm.hasKey(PROP_AZAM_TOKEN) ? drm.getString(PROP_AZAM_TOKEN) : null;
+            String nagraToken = drm.hasKey(PROP_NAGRA_TOKEN) ? drm.getString(PROP_NAGRA_TOKEN) : null;
 
             ReadableMap drmHeaders = drm.hasKey(PROP_DRM_HEADERS) ? drm.getMap(PROP_DRM_HEADERS) : null;
             if (drmType != null && drmLicenseServer != null && Util.getDrmUuid(drmType) != null) {
@@ -132,6 +134,7 @@ public class ReactExoplayerViewManager extends ViewGroupManager<ReactExoplayerVi
                 videoView.setDrmLicenseUrl(drmLicenseServer);
                 videoView.setDrmAuthTokenURL(drmAuthTokenURL);
                 videoView.setAzamToken(azamToken);
+                videoView.setNagraToken(nagraToken);
 
                 if (drmHeaders != null) {
                     ArrayList<String> drmKeyRequestPropertiesList = new ArrayList<>();

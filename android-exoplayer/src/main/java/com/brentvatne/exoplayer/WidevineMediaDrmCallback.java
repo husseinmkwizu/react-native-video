@@ -70,6 +70,7 @@ public final class WidevineMediaDrmCallback implements MediaDrmCallback {
     private final Map<String, String> keyRequestProperties;
 
     private String azamToken = null;
+    private String nagraToken = null;
     private String drmAuthTokenURL = null;
     private Uri srcUri;
     private VideoEventEmitter eventEmitter;
@@ -101,7 +102,7 @@ public final class WidevineMediaDrmCallback implements MediaDrmCallback {
         this.eventEmitter = eventEmitter;
     }
 
-    public WidevineMediaDrmCallback(String defaultLicenseUrl, HttpDataSource.Factory dataSourceFactory, Uri srcUri, String azamToken, String drmAuthTokenURL, VideoEventEmitter eventEmitter, QuickMarkView quickMarkView) {
+    public WidevineMediaDrmCallback(String defaultLicenseUrl, HttpDataSource.Factory dataSourceFactory, Uri srcUri, String azamToken, String drmAuthTokenURL, VideoEventEmitter eventEmitter, QuickMarkView quickMarkView, String nagraToken) {
         this(defaultLicenseUrl, false, dataSourceFactory);
 
         this.azamToken = azamToken;
@@ -109,6 +110,7 @@ public final class WidevineMediaDrmCallback implements MediaDrmCallback {
         this.srcUri = srcUri;
         this.eventEmitter = eventEmitter;
         this.quickMarkView = quickMarkView;
+        this.nagraToken = nagraToken;
     }
 
     /**
@@ -208,35 +210,47 @@ public final class WidevineMediaDrmCallback implements MediaDrmCallback {
 //        eventEmitter.drmKeysAcquired(contentId, pssh);
 
         //------ fetch Nagra token
-        Map<String, String> params = new HashMap<>();
-        params.put("Authorization", "Bearer " + this.azamToken);
-        byte[] data = this.executeGet(this.drmAuthTokenURL + "?contentId=" + contentId, params);
+        if (this.nagraToken == null || this.nagraToken.isEmpty()){
 
-        try {
-            JSONObject jsonObject = new JSONObject(new String(data));
+            Map<String, String> params = new HashMap<>();
+            params.put("Authorization", "Bearer " + this.azamToken);
+            byte[] data = this.executeGet(this.drmAuthTokenURL + "?contentId=" + contentId, params);
 
-            if (!jsonObject.isNull("success")) {
-                boolean success = jsonObject.getBoolean("success");
+            try {
+                JSONObject jsonObject = new JSONObject(new String(data));
 
-                if (success && !jsonObject.isNull("data")) {
-                    JSONObject dataObj = jsonObject.getJSONObject("data");
+                if (!jsonObject.isNull("success")) {
+                    boolean success = jsonObject.getBoolean("success");
 
-                    if (!dataObj.isNull("token")) {
-                        String token = dataObj.getString("token");
+                    if (success && !jsonObject.isNull("data")) {
+                        JSONObject dataObj = jsonObject.getJSONObject("data");
 
-                        //set token on watermark view, if available
-                        if (this.quickMarkView != null){
-                            this.quickMarkView.setToken(token);
+                        if (!dataObj.isNull("token")) {
+                            String token = dataObj.getString("token");
+
+                            //set token on watermark view, if available
+                            if (this.quickMarkView != null){
+                                this.quickMarkView.setToken(token);
+                            }
+
+                            requestProperties.put("nv-authorizations", token);
                         }
-
-                        requestProperties.put("nv-authorizations", token);
                     }
                 }
+
+            } catch (JSONException ex) {
+                Log.d("DRM:", ex.toString());
+            }
+        } else {
+            //set token on watermark view, if available
+            if (this.quickMarkView != null){
+                this.quickMarkView.setToken(this.nagraToken);
             }
 
-        } catch (JSONException ex) {
-            Log.d("DRM:", ex.toString());
+            requestProperties.put("nv-authorizations", this.nagraToken);
         }
+
+
 
 
 //        return executePost(dataSourceFactory, url, request.getData(), requestProperties);
