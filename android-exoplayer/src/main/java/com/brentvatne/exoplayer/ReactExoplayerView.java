@@ -267,8 +267,8 @@ class ReactExoplayerView extends FrameLayout implements
         quickMarkView.addOnErrorListener(this);
         quickMarkView.addOnMessageListener(this);
 
-        quickMarkView.setToken("40001234");
-        quickMarkView.setApiKey("x6q1Q4voDp6yN0dzFEQMy8Epl6SMh1Tb6GKqS5bL");
+        // quickMarkView.setToken("40001234");
+        // quickMarkView.setApiKey("x6q1Q4voDp6yN0dzFEQMy8Epl6SMh1Tb6GKqS5bL");
 
         mainHandler = new Handler();
     }
