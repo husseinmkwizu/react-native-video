@@ -1397,7 +1397,8 @@ static int const RCTVideoUnset = -1;
         [_playerLayer addObserver:self forKeyPath:readyForDisplayKeyPath options:NSKeyValueObservingOptionNew context:nil];
         _playerLayerObserverSet = YES;
         
-        [self.layer addSublayer:_playerLayer];
+//        [self.layer addSublayer:_playerLayer];
+        [self.layer insertSublayer:_playerLayer atIndex:0];
         self.layer.needsDisplayOnBoundsChange = YES;
         
         //        [self configureQuickMarkView];
@@ -1815,7 +1816,6 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
                                         keyID = [jsonDict objectForKey:@"KeyId"];
                                     }
                                     
-                                    RCTVideo *selfRef = self;
                                     [self performAuthTokenRequestWithContentId:contentIDForAuth completion:^(NSString *token, NSError *error) {
                                         
                                         if (error != nil) {
@@ -1825,7 +1825,7 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
                                         
                                         //set token to watermark
                                         if (token != nil) {
-                                            [selfRef loadQuickMarkViewWithUrl:_watermarkServiceURL token:token tenant:_nagraTenantID];
+                                            [self loadQuickMarkViewWithUrl:self->_watermarkServiceURL token:token tenant:self->_nagraTenantID];
                                         }
                                                                            
                                         [self performContentKeyRequestWithContentURL:url spc:spcData authToken:token completion:^(NSData *ckcData, NSError *error) {
