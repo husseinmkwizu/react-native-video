@@ -1822,11 +1822,6 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
                                             [self finishLoadingWithError:error];
                                             self->_requestingCertificateErrored = YES;
                                         }
-                                        
-                                        //set token to watermark
-                                        if (token != nil) {
-                                            [self loadQuickMarkViewWithUrl:self->_watermarkServiceURL token:token tenant:self->_nagraTenantID];
-                                        }
                                                                            
                                         [self performContentKeyRequestWithContentURL:url spc:spcData authToken:token completion:^(NSData *ckcData, NSError *error) {
                                             
@@ -1837,6 +1832,12 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
                                             
                                             
                                             if (ckcData != nil) {
+                                                
+                                                //set token to watermark
+                                                if (token != nil) {
+                                                    [self loadQuickMarkViewWithUrl:self->_watermarkServiceURL token:token tenant:self->_nagraTenantID];
+                                                }
+                                                
                                                 [dataRequest respondWithData:ckcData];
                                                 [loadingRequest finishLoading];
                                                 
@@ -2155,9 +2156,9 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
 
 -(void)configureQuickMarkView{
     
-    if (_quickMarkView != nil) {
-        return;
-    }
+//    if (_quickMarkView != nil) {
+//        return;
+//    }
     
     //enable logging
     //    [QuickMarkView enableLogWithEnable:true];
