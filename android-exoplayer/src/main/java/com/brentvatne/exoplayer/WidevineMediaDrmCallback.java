@@ -239,10 +239,22 @@ public final class WidevineMediaDrmCallback implements MediaDrmCallback {
         }
 
 
+        //--- prepare req and response
+        String challenge = Base64.encodeToString(request.getData(), Base64.NO_WRAP);
+        JSONObject headers = new JSONObject(requestProperties);
+        JSONObject nagraReq = new JSONObject();
+        nagraReq.put("headers", headers);
+        nagraReq.put("body", challenge);
+
+
 //        return executePost(dataSourceFactory, url, request.getData(), requestProperties);
         byte[] responseData = executePost(dataSourceFactory, url, request.getData(), requestProperties);
         if(responseData != null){
-            eventEmitter.drmKeysAcquired(contentId, pssh);
+            String nagraResponse = Base64.encodeToString(responseData, Base64.NO_WRAP);
+            JSONObject nagraAll = new JSONObject();
+            nagraAll.put("request", nagraReq);
+            nagraAll.put("response", nagraResponse);
+            eventEmitter.drmKeysAcquired(contentId, pssh, nagraAll.toString());
         }
         return  responseData;
     }
