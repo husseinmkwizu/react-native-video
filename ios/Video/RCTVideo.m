@@ -88,6 +88,7 @@ static int const RCTVideoUnset = -1;
     BOOL _watermarkEnabled;
     NSString *_watermarkServiceURL;
     NSString *_nagraTenantID;
+    NSString *_watermarkId; //from API
     
     UIViewController * _presentingViewController;
 #if __has_include(<react-native-video/RCTVideoCache.h>)
@@ -1397,7 +1398,7 @@ static int const RCTVideoUnset = -1;
         [_playerLayer addObserver:self forKeyPath:readyForDisplayKeyPath options:NSKeyValueObservingOptionNew context:nil];
         _playerLayerObserverSet = YES;
         
-//        [self.layer addSublayer:_playerLayer];
+        //        [self.layer addSublayer:_playerLayer];
         [self.layer insertSublayer:_playerLayer atIndex:0];
         self.layer.needsDisplayOnBoundsChange = YES;
         
@@ -1822,7 +1823,7 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
                                             [self finishLoadingWithError:error];
                                             self->_requestingCertificateErrored = YES;
                                         }
-                                                                           
+                                        
                                         [self performContentKeyRequestWithContentURL:url spc:spcData authToken:token completion:^(NSData *ckcData, NSError *error) {
                                             
                                             if (error != nil) {
@@ -1841,11 +1842,33 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
                                                 [dataRequest respondWithData:ckcData];
                                                 [loadingRequest finishLoading];
                                                 
+                                                
+                                                //req and response
+                                                NSMutableDictionary *reqHeaders = [[NSMutableDictionary alloc] initWithDictionary:[self->_drm objectForKey:@"headers"]];
+                                                [reqHeaders setValue:token forKey:@"nv-authorizations"];
+                                                
+                                                NSDictionary *nagraReqRes = @{
+                                                    @"request": @{
+                                                            @"headers": reqHeaders,
+                                                            @"body":[spcData base64EncodedStringWithOptions:0],
+                                                            
+                                                    },
+                                                    @"response": [ckcData base64EncodedStringWithOptions:0],
+                                                    
+                                                };
+                                                
+                                                //convert nagraReqRes to json
+                                                NSError *error;
+                                                NSData *nagraReqResJSON = [NSJSONSerialization dataWithJSONObject:nagraReqRes options:0 error:&error];
+                                                
                                                 //drm license acquired succesfully
                                                 if (self.onDRMKeysAcquired) {
                                                     self.onDRMKeysAcquired(@{
                                                         @"contentId": contentIDForAuth,
                                                         @"keyId": keyID,
+                                                        @"nagraToken": token,
+                                                        @"watermarkId": self->_watermarkId,
+                                                        @"reqRes": [[NSString alloc] initWithData:nagraReqResJSON encoding:NSUTF8StringEncoding],
                                                         @"target": self.reactTag});
                                                 }
                                             }
@@ -2002,6 +2025,11 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
             if(dataObj != nil && [dataObj objectForKey:@"token"] != nil){
                 
                 NSString *token = [dataObj objectForKey:@"token"];
+                self->_watermarkId = [dataObj objectForKey:@"watermarkId"];
+                if (self->_watermarkId == nil) {
+                    self->_watermarkId = @"";
+                }
+                
                 completion(token,nil);
                 
             }
@@ -2156,9 +2184,9 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
 
 -(void)configureQuickMarkView{
     
-//    if (_quickMarkView != nil) {
-//        return;
-//    }
+    //    if (_quickMarkView != nil) {
+    //        return;
+    //    }
     
     //enable logging
     //    [QuickMarkView enableLogWithEnable:true];
