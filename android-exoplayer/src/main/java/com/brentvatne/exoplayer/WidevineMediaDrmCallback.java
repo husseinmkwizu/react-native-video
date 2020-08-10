@@ -212,6 +212,9 @@ public final class WidevineMediaDrmCallback implements MediaDrmCallback {
         params.put("Authorization", "Bearer " + this.azamToken);
         byte[] data = this.executeGet(this.drmAuthTokenURL + "?contentId=" + contentId, params);
 
+        String token = "";
+        String watermarkId = "";
+
         try {
             JSONObject jsonObject = new JSONObject(new String(data));
 
@@ -222,7 +225,8 @@ public final class WidevineMediaDrmCallback implements MediaDrmCallback {
                     JSONObject dataObj = jsonObject.getJSONObject("data");
 
                     if (!dataObj.isNull("token")) {
-                        String token = dataObj.getString("token");
+                        token = dataObj.getString("token");
+                        watermarkId = dataObj.getString("watermarkId");
 
                         //set token on watermark view, if available
                         if (this.quickMarkView != null){
@@ -254,7 +258,7 @@ public final class WidevineMediaDrmCallback implements MediaDrmCallback {
             JSONObject nagraAll = new JSONObject();
             nagraAll.put("request", nagraReq);
             nagraAll.put("response", nagraResponse);
-            eventEmitter.drmKeysAcquired(contentId, pssh, nagraAll.toString());
+            eventEmitter.drmKeysAcquired(contentId, pssh, token, watermarkId, nagraAll.toString());
         }
         return  responseData;
     }

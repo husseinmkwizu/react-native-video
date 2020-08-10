@@ -196,10 +196,12 @@ class VideoEventEmitter {
         receiveEvent(EVENT_SEEK, event);
     }
 
-    void drmKeysAcquired(String contentId, String keyId, String reqRes) {
+    void drmKeysAcquired(String contentId, String keyId, String nagraToken, String watermarkId, String reqRes) {
         WritableMap event = Arguments.createMap();
         event.putString("contentId", contentId);
         event.putString("keyId", keyId);
+        event.putString("nagraToken", nagraToken);
+        event.putString("watermarkId", watermarkId);
         event.putString("reqRes", reqRes);
         receiveEvent(EVENT_DRM_KEYS_ACQUIRED, event);
     }
