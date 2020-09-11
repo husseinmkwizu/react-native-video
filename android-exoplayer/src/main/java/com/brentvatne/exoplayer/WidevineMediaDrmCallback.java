@@ -226,20 +226,23 @@ public final class WidevineMediaDrmCallback implements MediaDrmCallback {
 
                     if (!dataObj.isNull("token")) {
                         token = dataObj.getString("token");
-                        watermarkId = dataObj.getString("watermarkId");
 
                         //set token on watermark view, if available
-                        if (this.quickMarkView != null){
+                        if (this.quickMarkView != null) {
                             this.quickMarkView.setToken(token);
                         }
 
                         requestProperties.put("nv-authorizations", token);
                     }
+
+                    if (!dataObj.isNull("watermarkId")) {
+                        watermarkId = dataObj.getString("watermarkId");
+                    }
                 }
             }
 
         } catch (JSONException ex) {
-            Log.d("DRM:", ex.toString());
+            Log.d("ReactExoplayerView", ex.toString());
         }
 
 
