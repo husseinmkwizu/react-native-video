@@ -201,7 +201,7 @@ public final class WidevineMediaDrmCallback implements MediaDrmCallback {
 
         SchemeData scheme = drmInitData.get(C.WIDEVINE_UUID);
         String schemeStr = Util.fromUtf8Bytes(scheme.data);
-        String[] parts = schemeStr.split("\n");
+        String[] parts = schemeStr.split("\\W+");
         String contentId = parts[parts.length - 1];
 
         String pssh = Base64.encodeToString(scheme.data, Base64.NO_WRAP);
