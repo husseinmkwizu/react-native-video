@@ -427,8 +427,12 @@ class ReactExoplayerView extends FrameLayout implements
 
                     // Watermark
                     if(self.watermarkEnabled){
-                        self.quickMarkView.setURL(self.watermarkServiceURL);
-                        self.quickMarkView.setTenant(self.nagraTenantID);
+
+                        if(self.quickMarkView != null){
+                            self.quickMarkView.setURL(self.watermarkServiceURL);
+                            self.quickMarkView.setTenant(self.nagraTenantID);
+                        }
+
                     }else{
                         self.quickMarkView = null;
                     }
