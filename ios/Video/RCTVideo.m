@@ -2207,6 +2207,10 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
     // Add constraints
     [self addConstraints:@[topConstraint, rightConstraint, bottomConstraint, leftConstraint]];
     _quickMarkView.quickMarkViewDelegate = self;
+    [_quickMarkView loadQuickMarkView];
+    [_quickMarkView setUrl:_watermarkServiceURL];
+    [_quickMarkView setTenant:_nagraTenantID];
+
     //    [_quickMarkView loadQuickMarkViewWithUrl:_watermarkServiceURL :@"40000000" :_nagraTenantID];
     //    [_quickMarkView setApiKey:@"x6q1Q4voDp6yN0dzFEQMy8Epl6SMh1Tb6GKqS5bL"];
     //    [self startWatermark];
@@ -2214,7 +2218,8 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
 
 - (void) loadQuickMarkViewWithUrl:(NSString * )url  token:(NSString * )token tenant:(NSString *)tenant{
     if (_quickMarkView != nil && _watermarkEnabled) {
-        [_quickMarkView loadQuickMarkViewWithUrl:url :token :tenant];
+//        [_quickMarkView loadQuickMarkViewWithUrl:url :token :tenant];
+        [_quickMarkView setToken:token];
         [_quickMarkView startWatermark];
     }
 }
